@@ -19,6 +19,7 @@
 package ru.tehkode.modifyworld.handlers;
 
 import java.util.logging.Logger;
+import java.util.Locale;
 
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -37,7 +38,9 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
-import org.bukkit.material.SpawnEgg;
+import org.bukkit.inventory.meta.SpawnEggMeta;
+import org.bukkit.entity.EntityType;
+import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 import ru.tehkode.modifyworld.ModifyworldListener;
@@ -104,7 +107,7 @@ public class PlayerListener extends ModifyworldListener {
 
 	@EventHandler(priority = EventPriority.LOW)
 	public void onPlayerBucketEmpty(PlayerBucketEmptyEvent event) {
-		String bucketName = event.getBucket().toString().toLowerCase().replace("_bucket", ""); // WATER_BUCKET -> water
+		String bucketName = bucketContent(event.getBucket());
 		if (permissionDenied(event.getPlayer(), "modifyworld.bucket.empty", bucketName)) {
 			event.setCancelled(true);
 		}
@@ -112,15 +115,17 @@ public class PlayerListener extends ModifyworldListener {
 
 	@EventHandler(priority = EventPriority.LOW)
 	public void onPlayerBucketFill(PlayerBucketFillEvent event) {
-		String materialName = event.getBlockClicked().getType().toString().toLowerCase().replace("stationary_", ""); // STATIONARY_WATER -> water
-
-		if ("air".equals(materialName)) { // This should be milk
-			materialName = "milk";
-		}
-
-		if (permissionDenied(event.getPlayer(), "modifyworld.bucket.fill", materialName)) {
+		// The resulting bucket identifies the collected content, not the clicked block.
+		ItemStack result = event.getItemStack();
+		String content = result == null ? event.getBlock().getType().name().toLowerCase(Locale.ROOT)
+				: bucketContent(result.getType());
+		if (permissionDenied(event.getPlayer(), "modifyworld.bucket.fill", content)) {
 			event.setCancelled(true);
 		}
+	}
+
+	private static String bucketContent(Material bucket) {
+		return bucket.name().toLowerCase(Locale.ROOT).replace("_bucket", "").replace("_", "");
 	}
 
 	@EventHandler(priority = EventPriority.LOW)
@@ -138,13 +143,16 @@ public class PlayerListener extends ModifyworldListener {
 	}
 
 	@EventHandler(priority = EventPriority.LOW)
-	public void onPlayerPickupItem(PlayerPickupItemEvent event) {
+	public void onPlayerPickupItem(EntityPickupItemEvent event) {
+		if (!(event.getEntity() instanceof Player player)) {
+			return;
+		}
 		// No inform to avoid spam
-		if (_permissionDenied(event.getPlayer(), "modifyworld.items.pickup", event.getItem().getItemStack())) {
+		if (_permissionDenied(player, "modifyworld.items.pickup", event.getItem().getItemStack())) {
 			event.setCancelled(true);
 		}
 
-		this.checkPlayerInventory(event.getPlayer());
+		this.checkPlayerInventory(player);
 	}
 
 	@EventHandler(priority = EventPriority.LOW)
@@ -228,7 +236,7 @@ public class PlayerListener extends ModifyworldListener {
 	@EventHandler(priority = EventPriority.LOW)
 	public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
 		if (this.checkItemUse) {
-			if (permissionDenied(event.getPlayer(), "modifyworld.items.use", event.getPlayer().getItemInHand(), "on.entity", event.getRightClicked())) {
+			if (permissionDenied(event.getPlayer(), "modifyworld.items.use", event.getPlayer().getInventory().getItem(event.getHand()), "on.entity", event.getRightClicked())) {
 				event.setCancelled(true);
 			}
 
@@ -250,28 +258,28 @@ public class PlayerListener extends ModifyworldListener {
 
 		Player player = event.getPlayer();
 
-		if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) { //RIGHT_CLICK_AIR is cancelled by default.
-			switch (player.getItemInHand().getType()) {
-				case POTION: //Only check splash potions.
-					if ((player.getItemInHand().getDurability() & 0x4000) != 0x4000) {
-						break;
-					}
-				case EGG:
-				case SNOW_BALL:
-				case EXP_BOTTLE:
-					if (permissionDenied(player, "modifyworld.items.throw", player.getItemInHand())) {
-						event.setUseItemInHand(Result.DENY);
-						//Denying a potion works fine, but the client needs to be updated because it already reduced the item.
-						if (player.getItemInHand().getType() == Material.POTION) {
-							event.getPlayer().updateInventory();
-						}
-					}
-					return; // no need to check further
-				case MONSTER_EGG: // don't add MONSTER_EGGS here
-					if (permissionDenied(player, "modifyworld.spawn", ((SpawnEgg)player.getItemInHand().getData()).getSpawnedType())) {
+		ItemStack held = event.getItem();
+		Material heldMaterial = held == null ? Material.AIR : held.getType();
+		if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
+			switch (heldMaterial) {
+				case SPLASH_POTION, LINGERING_POTION, EGG, SNOWBALL, EXPERIENCE_BOTTLE -> {
+					if (permissionDenied(player, "modifyworld.items.throw", held)) {
 						event.setUseItemInHand(Result.DENY);
 					}
-					return; // no need to check further
+					return;
+				}
+				default -> { }
+			}
+			if (heldMaterial.name().endsWith("_SPAWN_EGG")) {
+				SpawnEggMeta meta = (SpawnEggMeta) held.getItemMeta();
+				EntityType type = meta.getCustomSpawnedType();
+				if (type == null) {
+					type = EntityType.valueOf(held.getType().name().replace("_SPAWN_EGG", ""));
+				}
+				if (permissionDenied(player, "modifyworld.spawn", type)) {
+					event.setUseItemInHand(Result.DENY);
+				}
+				return;
 			}
 		}
 
@@ -280,7 +288,7 @@ public class PlayerListener extends ModifyworldListener {
 		}
 
 		if (this.checkItemUse && action != Action.PHYSICAL) {
-			if (permissionDenied(event.getPlayer(), "modifyworld.items.use", player.getItemInHand(), "on.block", event.getClickedBlock())) {
+			if (permissionDenied(event.getPlayer(), "modifyworld.items.use", held == null ? Material.AIR : held, "on.block", event.getClickedBlock())) {
 				event.setCancelled(true);
 			}
 

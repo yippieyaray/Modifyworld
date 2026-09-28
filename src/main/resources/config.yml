@@ -1,3 +1,13 @@
+# Modern material names only; legacy numeric IDs and metadata require migration.
+use-material-names: true
+check-metadata: false
+# Enable item-on-block/entity permission checks, including flint and steel.
+item-use-check: true
+inform-players: true
+item-restrictions: false
+drop-restricted-item: false
+whitelist: false
+
 messages:
   message-format: '&f[&2Modifyworld&f]&4 %s'
   default-message: Sorry, you don't have enough permissions

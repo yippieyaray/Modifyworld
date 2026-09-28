@@ -65,7 +65,7 @@ public class BlockListener extends ModifyworldListener {
 
 	@EventHandler(priority = EventPriority.LOW)
 	public void onPaintingPlace(HangingPlaceEvent event) {
-		if (permissionDenied(event.getPlayer(), "modifyworld.blocks.place", event.getEntity().getType())) {
+		if (event.getPlayer() != null && permissionDenied(event.getPlayer(), "modifyworld.blocks.place", event.getEntity().getType())) {
 			event.setCancelled(true);
 		}
 	}

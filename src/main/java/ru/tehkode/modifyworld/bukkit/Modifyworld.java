@@ -72,6 +72,12 @@ public class Modifyworld extends JavaPlugin {
 			this.initializeConfiguration(config);
 		}
 
+		if (!config.getBoolean("use-material-names", true) || config.getBoolean("check-metadata", false)) {
+			getLogger().severe("Legacy numeric IDs and metadata permissions are not supported. Migrate permissions to material names, set use-material-names: true and check-metadata: false before enabling Modifyworld.");
+			getServer().getPluginManager().disablePlugin(this);
+			return;
+		}
+
 		this.informer = new PlayerInformer(config);
 
 		this.registerListeners();
@@ -96,7 +102,7 @@ public class Modifyworld extends JavaPlugin {
 		config.set("use-material-names", true);
 		config.set("drop-restricted-item", false);
 		config.set("item-use-check", false);
-		config.set("check-metadata", true);
+		config.set("check-metadata", false);
 	}
 
 	protected void registerListeners() {

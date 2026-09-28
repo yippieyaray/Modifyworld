@@ -1,7 +1,5 @@
 package ru.tehkode.modifyworld;
 
-import net.milkbowl.vault.chat.Chat;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
@@ -10,8 +8,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import ru.tehkode.permissions.PermissionUser;
-import ru.tehkode.permissions.bukkit.PermissionsEx;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -77,77 +73,8 @@ public class PlayerInformer {
 	}
 
 	public String getMessage(Player player, String permission) {
-		String message = null;
-		if (Bukkit.getServer().getPluginManager().isPluginEnabled("Vault")) {
-			message = getMessageVault(player, permission);
-		}
-		if (message == null) {
-			try {
-				Class.forName("ru.tehkode.permissions.bukkit.PermissionsEx");
-				message = getMessagePEX(player, permission);
-			} catch (ClassNotFoundException ignore) {
-			}
-		}
-
-		if (message != null) {
-			return message;
-		}
-
+		// Permission decisions remain with Bukkit; messages come from config.yml.
 		return getMessage(permission);
-	}
-
-	public String getMessagePEX(Player player, String permission) {
-		if (PermissionsEx.isAvailable()) {
-			PermissionUser user = PermissionsEx.getUser(player);
-
-			String message;
-			String perm = permission;
-			int index;
-
-			while ((index = perm.lastIndexOf(".")) != -1) {
-				perm = perm.substring(0, index);
-
-				message = user.getOption("permission-denied-" + perm, player.getWorld().getName(), null);
-				if (message == null) {
-					continue;
-				}
-
-				return message;
-			}
-
-			message = user.getOption("permission-denied", player.getWorld().getName(), null);
-
-			if (message != null) {
-				return message;
-			}
-		}
-		return null;
-	}
-
-	private String getMessageVault(Player player, String permission) {
-		Chat chat = Bukkit.getServer().getServicesManager().load(Chat.class);
-		if (chat != null) {
-			String message;
-			String perm = permission;
-			int index;
-
-			while ((index = perm.lastIndexOf(".")) != -1) {
-				perm = perm.substring(0, index);
-
-				message = chat.getPlayerInfoString(player.getWorld(), player.getName(), "permission-denied-" + perm, null);
-				if (message == null) {
-					continue;
-				}
-
-				return message;
-			}
-
-			message = chat.getPlayerInfoString(player.getWorld(), player.getName(), "permission-denied", null);
-			if (message != null) {
-				return message;
-			}
-		}
-		return null;
 	}
 
 	public void informPlayer(Player player, String permission, Object... args) {
@@ -185,12 +112,6 @@ public class PlayerInformer {
 	}
 
 	private String describeMaterial(Material material) {
-		// TODO: implement data id
-
-		if (material == Material.INK_SACK) {
-			return "dye";
-		}
-
 		return material.toString().toLowerCase().replace("_", " ");
 	}
 

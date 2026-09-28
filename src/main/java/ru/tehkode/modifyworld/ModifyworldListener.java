@@ -18,6 +18,7 @@
  */
 package ru.tehkode.modifyworld;
 
+import java.util.Locale;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
@@ -37,8 +38,6 @@ public abstract class ModifyworldListener implements Listener {
 	protected PlayerInformer informer;
 	protected ConfigurationSection config;
 	protected boolean informPlayers = false;
-	protected boolean useMaterialNames = true;
-	protected boolean checkMetadata = false;
 	protected boolean checkItemUse = false;
 	protected boolean enableWhitelist = false;
 
@@ -49,8 +48,6 @@ public abstract class ModifyworldListener implements Listener {
 		this.registerEvents(plugin);
 
 		this.informPlayers = config.getBoolean("informPlayers", informPlayers);
-		this.useMaterialNames = config.getBoolean("use-material-names", useMaterialNames);
-		this.checkMetadata = config.getBoolean("check-metadata", checkMetadata);
 		this.checkItemUse = config.getBoolean("item-use-check", checkItemUse);
 		this.enableWhitelist = config.getBoolean("whitelist", enableWhitelist);
 	}
@@ -89,40 +86,17 @@ public abstract class ModifyworldListener implements Listener {
 		return formatEnumString(type.name());
 	}
 
-	// Functional programming fuck yeah
 	private String getMaterialPermission(Material type) {
-		return this.useMaterialNames ? formatEnumString(type.name()) : Integer.toString(type.getId());
-	}
-
-	private String getMaterialPermission(Material type, byte metadata) {
-		return getMaterialPermission(type) + (checkMetadata && metadata > 0 ? ":" + metadata : "");
+		return formatEnumString(type.name());
 	}
 
 	private String getBlockPermission(Block block) {
-		return getMaterialPermission(block.getType(), block.getData());
+		return getMaterialPermission(block.getType());
 	}
 
 	public String getItemPermission(ItemStack item) {
-		return getMaterialPermission(item.getType(), item.getData().getData());
+		return getMaterialPermission(item == null ? Material.AIR : item.getType());
 	}
-
-	/*
-	protected boolean permissionDenied(Player player, String basePermission, Entity entity) {
-		if (entity instanceof Player && PermissionsEx.isAvailable()) {
-			PermissionUser entityUser = PermissionsEx.getUser((Player)entity);
-
-			for (PermissionGroup group : entityUser.getGroups()) {
-				if (permissionDenied(player, basePermission, "group", group.getName())) {
-					return true;
-				}
-			}
-
-			return permissionDenied(player, basePermission, "player", entityUser.getName());
-		}
-
-		return permissionDenied(player, basePermission, entity);
-	}
-	*/
 
 	protected boolean permissionDenied(Player player, String basePermission, Object... arguments) {
 		String permission = assemblePermission(basePermission, arguments);
@@ -181,6 +155,6 @@ public abstract class ModifyworldListener implements Listener {
 	}
 
 	private String formatEnumString(String enumName) {
-		return enumName.toLowerCase().replace("_", "");
+		return enumName.toLowerCase(Locale.ROOT).replace("_", "");
 	}
 }
