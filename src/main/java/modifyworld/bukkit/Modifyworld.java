@@ -1,3 +1,4 @@
+// Modified on 2026-09-28: delegate container transfers to ContainerListener.
 // Modified on 2026-09-28: move to the neutral modifyworld namespace.
 /*
  * Modifyworld - PermissionsEx ruleset plugin for Bukkit
@@ -29,6 +30,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import modifyworld.ModifyworldListener;
 import modifyworld.PlayerInformer;
 import modifyworld.handlers.BlockListener;
+import modifyworld.handlers.ContainerListener;
 import modifyworld.handlers.EntityListener;
 import modifyworld.handlers.PlayerListener;
 import modifyworld.handlers.VehicleListener;
@@ -50,6 +52,7 @@ public class Modifyworld extends JavaPlugin {
 
 	protected final static Class<? extends ModifyworldListener>[] LISTENERS = new Class[]{
 		PlayerListener.class,
+		ContainerListener.class,
 		EntityListener.class,
 		BlockListener.class,
 		VehicleListener.class

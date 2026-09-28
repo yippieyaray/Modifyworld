@@ -1,3 +1,4 @@
+// Modified on 2026-09-28: delegate container transfers to ContainerListener.
 // Modified on 2026-09-28: move to the neutral modifyworld namespace.
 /*
  * Modifyworld - PermissionsEx ruleset plugin for Bukkit
@@ -36,7 +37,6 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.SpawnEggMeta;
@@ -184,37 +184,6 @@ public class PlayerListener extends ModifyworldListener {
 		}
 
 		this.checkPlayerInventory(player);
-	}
-
-	@EventHandler(priority = EventPriority.LOW)
-	public void onPlayerInventoryClick(InventoryClickEvent event) {
-		InventoryHolder holder = event.getInventory().getHolder();
-
-		if (holder instanceof Player || // do not track inter-inventory stuff
-				event.getRawSlot() >= event.getView().getTopInventory().getSize() || // top inventory only
-				event.getSlotType() == InventoryType.SlotType.OUTSIDE ||  // do not track drop
-				event.getSlot() == -999) { // temporary fix for bukkit bug (BUKKIT-2768)
-			return;
-		}
-
-		ItemStack take = event.getCurrentItem();
-
-		String action;
-		ItemStack item;
-
-		if (take == null) {
-			action = "put";
-			item = event.getCursor();
-		} else {
-			action = "take";
-			item = take;
-		}
-
-		Player player = (Player) event.getWhoClicked();
-
-		if (permissionDenied(player, "modifyworld.items", action, item, "of", event.getInventory().getType())) {
-			event.setCancelled(true);
-		}
 	}
 
 	@EventHandler(priority = EventPriority.LOW)
