@@ -1,4 +1,5 @@
-package ru.tehkode.modifyworld;
+// Modified on 2026-09-28: move to the neutral modifyworld namespace.
+package modifyworld;
 
 import java.util.Locale;
 import org.bukkit.Material;
@@ -20,8 +21,8 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import ru.tehkode.modifyworld.handlers.BlockListener;
-import ru.tehkode.modifyworld.handlers.PlayerListener;
+import modifyworld.handlers.BlockListener;
+import modifyworld.handlers.PlayerListener;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;

@@ -1,5 +1,5 @@
 name: Modifyworld
-main: ru.tehkode.modifyworld.bukkit.Modifyworld
+main: modifyworld.bukkit.Modifyworld
 softdepend: [ LuckPerms ]
 version: "${project.version}"
 author: t3hk0d3

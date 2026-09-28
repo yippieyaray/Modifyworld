@@ -1,3 +1,4 @@
+// Modified on 2026-09-28: move to the neutral modifyworld namespace.
 /*
  * Modifyworld - PermissionsEx ruleset plugin for Bukkit
  * Copyright (C) 2011 t3hk0d3 http://www.tehkode.ru
@@ -16,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package ru.tehkode.modifyworld;
+package modifyworld;
 
 import java.util.Locale;
 import org.bukkit.Material;

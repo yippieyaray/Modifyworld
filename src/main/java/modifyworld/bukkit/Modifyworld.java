@@ -1,3 +1,4 @@
+// Modified on 2026-09-28: move to the neutral modifyworld namespace.
 /*
  * Modifyworld - PermissionsEx ruleset plugin for Bukkit
  * Copyright (C) 2011 t3hk0d3 http://www.tehkode.ru
@@ -16,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package ru.tehkode.modifyworld.bukkit;
+package modifyworld.bukkit;
 
 import java.io.InputStreamReader;
 import org.bukkit.configuration.ConfigurationSection;
@@ -25,12 +26,12 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import ru.tehkode.modifyworld.ModifyworldListener;
-import ru.tehkode.modifyworld.PlayerInformer;
-import ru.tehkode.modifyworld.handlers.BlockListener;
-import ru.tehkode.modifyworld.handlers.EntityListener;
-import ru.tehkode.modifyworld.handlers.PlayerListener;
-import ru.tehkode.modifyworld.handlers.VehicleListener;
+import modifyworld.ModifyworldListener;
+import modifyworld.PlayerInformer;
+import modifyworld.handlers.BlockListener;
+import modifyworld.handlers.EntityListener;
+import modifyworld.handlers.PlayerListener;
+import modifyworld.handlers.VehicleListener;
 
 import java.io.File;
 import java.io.FileNotFoundException;

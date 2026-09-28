@@ -1,4 +1,5 @@
-package ru.tehkode.modifyworld;
+// Modified on 2026-09-28: move to the neutral modifyworld namespace.
+package modifyworld;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
