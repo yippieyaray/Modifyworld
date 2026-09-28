@@ -1,3 +1,4 @@
+// Modified on 2026-09-28: cover player ignition and bucket transfers through cauldrons.
 // Modified on 2026-09-28: move to the neutral modifyworld namespace.
 /*
  * Modifyworld - PermissionsEx ruleset plugin for Bukkit
@@ -19,12 +20,16 @@
  */
 package modifyworld.handlers;
 
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.event.block.BlockIgniteEvent;
+import org.bukkit.event.block.CauldronLevelChangeEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.block.BlockMultiPlaceEvent;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.hanging.HangingPlaceEvent;
@@ -51,7 +56,55 @@ public class BlockListener extends ModifyworldListener {
 
 	@EventHandler(priority = EventPriority.LOW)
 	public void onBlockPlace(BlockPlaceEvent event) {
+		if (event instanceof BlockMultiPlaceEvent multi) {
+			for (org.bukkit.block.BlockState replaced : multi.getReplacedBlockStates()) {
+				if (permissionDenied(event.getPlayer(), "modifyworld.blocks.place", replaced.getBlock())) {
+					event.setCancelled(true);
+					return;
+				}
+			}
+			return;
+		}
 		if (permissionDenied(event.getPlayer(), "modifyworld.blocks.place", event.getBlock())) {
+			event.setCancelled(true);
+		}
+	}
+
+	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+	public void onBlockIgnite(BlockIgniteEvent event) {
+		// The legacy fire-placement rule covers player ignition, including soul fire.
+		// Natural spread and automation have no player permission context.
+		Player player = event.getPlayer();
+		if (player != null && permissionDenied(player, "modifyworld.blocks.place", Material.FIRE)) {
+			event.setCancelled(true);
+		}
+	}
+
+	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+	public void onCauldronBucket(CauldronLevelChangeEvent event) {
+		if (!(event.getEntity() instanceof Player player)) {
+			return;
+		}
+		String action;
+		Material cauldron;
+		switch (event.getReason()) {
+			case BUCKET_EMPTY -> {
+				action = "empty";
+				cauldron = event.getNewState().getType();
+			}
+			case BUCKET_FILL -> {
+				action = "fill";
+				cauldron = event.getBlock().getType();
+			}
+			default -> { return; }
+		}
+		String content = switch (cauldron) {
+			case LAVA_CAULDRON -> "lava";
+			case WATER_CAULDRON -> "water";
+			case POWDER_SNOW_CAULDRON -> "powdersnow";
+			default -> null;
+		};
+		if (content != null && permissionDenied(player, "modifyworld.bucket", action, content)) {
 			event.setCancelled(true);
 		}
 	}

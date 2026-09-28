@@ -1,3 +1,4 @@
+// Modified on 2026-09-28: registration is owned by plugin startup, after construction.
 // Modified on 2026-09-28: move to the neutral modifyworld namespace.
 /*
  * Modifyworld - PermissionsEx ruleset plugin for Bukkit
@@ -38,19 +39,13 @@ public abstract class ModifyworldListener implements Listener {
 
 	protected PlayerInformer informer;
 	protected ConfigurationSection config;
-	protected boolean informPlayers = false;
 	protected boolean checkItemUse = false;
-	protected boolean enableWhitelist = false;
 
 	public ModifyworldListener(Plugin plugin, ConfigurationSection config, PlayerInformer informer) {
 		this.informer = informer;
 		this.config = config;
 
-		this.registerEvents(plugin);
-
-		this.informPlayers = config.getBoolean("informPlayers", informPlayers);
 		this.checkItemUse = config.getBoolean("item-use-check", checkItemUse);
-		this.enableWhitelist = config.getBoolean("whitelist", enableWhitelist);
 	}
 
 	private String getEntityName(Entity entity) {
@@ -101,7 +96,7 @@ public abstract class ModifyworldListener implements Listener {
 
 	protected boolean permissionDenied(Player player, String basePermission, Object... arguments) {
 		String permission = assemblePermission(basePermission, arguments);
-		boolean isDenied = !player.hasPermission(permission);
+		boolean isDenied = _permissionDenied(player, permission);
 
 		if (isDenied) {
 			this.informer.informPlayer(player, permission, arguments);
@@ -111,7 +106,8 @@ public abstract class ModifyworldListener implements Listener {
 	}
 
 	protected boolean _permissionDenied(Player player, String permission, Object... arguments) {
-		return !player.hasPermission(assemblePermission(permission, arguments));
+		return !(config.getBoolean("op-bypass", false) && player.isOp())
+                && !player.hasPermission(assemblePermission(permission, arguments));
 	}
 
 	protected String assemblePermission(String permission, Object... arguments) {
@@ -149,10 +145,6 @@ public abstract class ModifyworldListener implements Listener {
 		}
 
 		return (obj.toString());
-	}
-
-	private void registerEvents(Plugin plugin) {
-		plugin.getServer().getPluginManager().registerEvents(this, plugin);
 	}
 
 	private String formatEnumString(String enumName) {

@@ -19,6 +19,7 @@
  */
 package modifyworld.handlers;
 
+import java.util.Locale;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -63,7 +64,7 @@ public class EntityListener extends ModifyworldListener {
 		} else if (event.getEntity() instanceof Player) { // player are been damaged by enviroment
 			Player player = (Player) event.getEntity();
 
-			if (_permissionDenied(player, "modifyworld.damage.take",  event.getCause().name().toLowerCase().replace("_", ""))) {
+			if (_permissionDenied(player, "modifyworld.damage.take",  event.getCause().name().toLowerCase(Locale.ROOT).replace("_", ""))) {
 				cancelDamageEvent(player, event);
 				return;
 			}

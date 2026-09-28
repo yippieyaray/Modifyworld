@@ -1,3 +1,5 @@
+// Modified on 2026-09-28: use Paper chat and explicit interaction results.
+// Modified on 2026-09-28: check actual crafting output for every extraction mode.
 // Modified on 2026-09-28: delegate container transfers to ContainerListener.
 // Modified on 2026-09-28: move to the neutral modifyworld namespace.
 /*
@@ -20,9 +22,11 @@
  */
 package modifyworld.handlers;
 
-import java.util.logging.Logger;
 import java.util.Locale;
 
+import io.papermc.paper.event.player.AsyncChatEvent;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
@@ -52,11 +56,13 @@ import modifyworld.PlayerInformer;
  */
 public class PlayerListener extends ModifyworldListener {
 
+	private final Plugin plugin;
 	protected boolean checkInventory = false;
 	protected boolean dropRestrictedItem = false;
 
 	public PlayerListener(Plugin plugin, ConfigurationSection config, PlayerInformer informer) {
 		super(plugin, config, informer);
+		this.plugin = plugin;
 
 		this.checkInventory = config.getBoolean("item-restrictions", this.checkInventory);
 		this.dropRestrictedItem = config.getBoolean("drop-restricted-item", this.dropRestrictedItem);
@@ -84,20 +90,6 @@ public class PlayerListener extends ModifyworldListener {
 	}
 
 
-	@EventHandler(priority = EventPriority.LOW)
-	public void onPlayerLogin(PlayerLoginEvent event) {
-		if (!enableWhitelist) {
-			return;
-		}
-
-		Player player = event.getPlayer();
-
-		if (_permissionDenied(player, "modifyworld.login")) {
-			// String whiteListMessage = user.getOption("kick-message", worldName, this.whitelistKickMessage);
-			event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, informer.getMessage(player, "modifyworld.login"));
-			Logger.getLogger("Minecraft").info("Player \"" + player.getName() + "\" were kicked by Modifyworld - lack of 'modifyworld.login' permission");
-		}
-	}
 
 	@EventHandler(priority = EventPriority.LOW)
 	public void onPlayerBedEnter(PlayerBedEnterEvent event) {
@@ -136,10 +128,21 @@ public class PlayerListener extends ModifyworldListener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
-	public void onPlayerChat(PlayerChatEvent event) {
-		if (permissionDenied(event.getPlayer(), "modifyworld.chat")) {
+	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+	public void onPlayerChat(AsyncChatEvent event) {
+		try {
+			// Bukkit permission providers and denial messages run on the server thread.
+			boolean denied = event.isAsynchronous()
+					? plugin.getServer().getScheduler().callSyncMethod(plugin,
+							() -> permissionDenied(event.getPlayer(), "modifyworld.chat")).get()
+					: permissionDenied(event.getPlayer(), "modifyworld.chat");
+			if (denied) event.setCancelled(true);
+		} catch (InterruptedException failure) {
+			Thread.currentThread().interrupt();
 			event.setCancelled(true);
+		} catch (ExecutionException | RuntimeException failure) {
+			event.setCancelled(true);
+			plugin.getLogger().log(Level.WARNING, "Could not check chat permission; message cancelled", failure);
 		}
 	}
 
@@ -265,7 +268,7 @@ public class PlayerListener extends ModifyworldListener {
 			return;
 		}
 
-		if (!event.isCancelled() && permissionDenied(player, "modifyworld.blocks.interact", event.getClickedBlock())) {
+		if (event.useInteractedBlock() != Result.DENY && permissionDenied(player, "modifyworld.blocks.interact", event.getClickedBlock())) {
 			event.setCancelled(true);
 		}
 	}
@@ -277,11 +280,16 @@ public class PlayerListener extends ModifyworldListener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void onItemCraft(CraftItemEvent event) {
-		Player player = (Player) event.getWhoClicked();
-
-		if (permissionDenied(player, "modifyworld.items.craft", event.getRecipe().getResult())) {
+		if (!(event.getWhoClicked() instanceof Player player)) {
+			return;
+		}
+		// Check the actual output, including results replaced by another plugin.
+		// Cancelling the event also cancels shift-crafting and hotbar/drop extraction.
+		ItemStack result = event.getCurrentItem();
+		if (result != null && !result.getType().isAir()
+				&& permissionDenied(player, "modifyworld.items.craft", result)) {
 			event.setCancelled(true);
 		}
 	}

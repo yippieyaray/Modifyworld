@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public class PlayerInformer {
@@ -32,6 +33,7 @@ public class PlayerInformer {
 	}
 
 	private void loadConfig(ConfigurationSection config) {
+		if (config == null) throw new IllegalArgumentException("Missing messages configuration");
 
 		this.defaultMessage = config.getString("default-message", this.defaultMessage);
 		this.messageFormat = config.getString("message-format", this.messageFormat);
@@ -95,6 +97,7 @@ public class PlayerInformer {
 	}
 
 	protected String describeObject(Object obj) {
+		if (obj == null) return "air";
 		if (obj instanceof ComplexEntityPart) { // Complex entities
 			return describeObject(((ComplexEntityPart) obj).getParent());
 		} else if (obj instanceof Item) { // Dropped items
@@ -102,7 +105,7 @@ public class PlayerInformer {
 		} else if (obj instanceof ItemStack) { // Items
 			return describeMaterial(((ItemStack) obj).getType());
 		} else if (obj instanceof Entity) { // Entities
-			return ((Entity) obj).getType().toString().toLowerCase().replace("_", " ");
+			return ((Entity) obj).getType().toString().toLowerCase(Locale.ROOT).replace("_", " ");
 		} else if (obj instanceof Block) { // Blocks
 			return describeMaterial(((Block) obj).getType());
 		} else if (obj instanceof Material) { // Just material
@@ -113,7 +116,7 @@ public class PlayerInformer {
 	}
 
 	private String describeMaterial(Material material) {
-		return material.toString().toLowerCase().replace("_", " ");
+		return material.toString().toLowerCase(Locale.ROOT).replace("_", " ");
 	}
 
 	// For backward compatibility

@@ -20,7 +20,7 @@
 
 package modifyworld;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.bukkit.entity.*;
 
@@ -36,7 +36,7 @@ public enum EntityCategory {
 	private String name;
 	private Class<? extends Entity> classes[];
 	
-	private final static Map<Class<? extends Entity>, EntityCategory> map = new HashMap<Class<? extends Entity>, EntityCategory>();
+	private final static Map<Class<? extends Entity>, EntityCategory> map = new LinkedHashMap<Class<? extends Entity>, EntityCategory>();
 	
 	static {
 		for (EntityCategory cat : EntityCategory.values()) {
@@ -46,6 +46,7 @@ public enum EntityCategory {
 		}
 	}
 	
+	@SafeVarargs
 	private EntityCategory(String name, Class<? extends Entity>... classes) {
 		this.name = name;
 		this.classes = classes;

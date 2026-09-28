@@ -1,0 +1,25 @@
+# German messages. Color codes and argument placeholders are supported.
+message-format: '&f[&2System&f]&4 %s'
+default-message: Dein Level reicht fuer diese Aktion nicht!
+modifyworld.items.use: Mmmhh, &a$1&4 benutzen fuer &a$3 wird fuer Dich nicht klappen!
+modifyworld.login: Der Server ist nichts fuer Dich, Aufwiedersehen!
+modifyworld.blocks.interact: Dafuer bist noch zu schwach fuer &2$1
+modifyworld.blocks.place: Du kannst &a$1 hier nicht platzieren!
+modifyworld.blocks.destroy: Mmmh, &a$1&4 ist zu hart fuer Dich!
+modifyworld.damage.deal: Dein Level ist zu gering fuer &5$1
+modifyworld.chat: Die Zuhoerer sind leider taub!
+modifyworld.chat.private: Keine privat Gepraeche!
+modifyworld.items.have: Das verbotene Objekt &a$1&4 wurde Dir weggenommen!
+modifyworld.items.drop: Es ist nicht nett mit &a$1&4 herumzuwerfen!
+modifyworld.items.hold: Achtung, &a$1&4 ist verflucht!
+modifyworld.items.craft: Sorry, aber &a$1&4 ist fuer Dich zu kompliziert!
+modifyworld.items.enchant: Sorry, &a$1&4 ist fuer Dich zu gefaehrlich!
+modifyworld.items.pickup: Finger weg, &a$1&4 ist nichts fuer Dich!
+modifyworld.items.take: Hey, &a$1&4 das bleibt an seinem Platz!
+modifyworld.vehicle.enter.boat: Du bist zu schwer fuer &a$1
+modifyworld.vehicle.enter.minecart: Sorry, aber &a$1&4 ist zu klein fuer Dich!
+modifyworld.vehicle.destroy: Hey, &a$1&4 ist Staatseigentum!
+modifyworld.tame: Leider ist &a$1&4 zu boesartig!
+modifyworld.bucket.fill: Der Eimer ist heilig!
+modifyworld.bucket.empty: Ploetzlich merkst Du das &a$1 fuer Dich wichtig ist!
+modifyworld.usebeds: Du kannst nicht schlafen, ich hoere ein Monster!

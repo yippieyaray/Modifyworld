@@ -1,5 +1,4 @@
-// Modified on 2026-09-28: delegate container transfers to ContainerListener.
-// Modified on 2026-09-28: move to the neutral modifyworld namespace.
+// Modified on 2026-09-28: validate configuration and make listener startup transactional.
 /*
  * Modifyworld - PermissionsEx ruleset plugin for Bukkit
  * Copyright (C) 2011 t3hk0d3 http://www.tehkode.ru
@@ -20,217 +19,95 @@
  */
 package modifyworld.bukkit;
 
-import java.io.InputStreamReader;
-import org.bukkit.configuration.ConfigurationSection;
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.logging.Level;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.Plugin;
+import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 import modifyworld.ModifyworldListener;
 import modifyworld.PlayerInformer;
-import modifyworld.handlers.BlockListener;
-import modifyworld.handlers.ContainerListener;
-import modifyworld.handlers.EntityListener;
-import modifyworld.handlers.PlayerListener;
-import modifyworld.handlers.VehicleListener;
+import modifyworld.handlers.*;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-
-/**
- *
- * @author t3hk0d3
- */
 public class Modifyworld extends JavaPlugin {
+    protected List<ModifyworldListener> listeners = List.of();
+    protected PlayerInformer informer;
+    protected FileConfiguration config;
 
-	protected final static Class<? extends ModifyworldListener>[] LISTENERS = new Class[]{
-		PlayerListener.class,
-		ContainerListener.class,
-		EntityListener.class,
-		BlockListener.class,
-		VehicleListener.class
-	};
-	protected List<ModifyworldListener> listeners = new ArrayList<ModifyworldListener>();
-	protected PlayerInformer informer;
-	protected File configFile;
-	protected FileConfiguration config;
-
-	@Override
-	public void onLoad() {
-		configFile = new File(this.getDataFolder(), "config.yml");
-	}
-
-	@Override
-	public void onEnable() {
-		this.config = this.getConfig();
-
-		if (!config.isConfigurationSection("messages")) {
-			this.getLogger().severe("Deploying default config");
-			this.initializeConfiguration(config);
-		}
-
-		if (!config.getBoolean("use-material-names", true) || config.getBoolean("check-metadata", false)) {
-			getLogger().severe("Legacy numeric IDs and metadata permissions are not supported. Migrate permissions to material names, set use-material-names: true and check-metadata: false before enabling Modifyworld.");
-			getServer().getPluginManager().disablePlugin(this);
-			return;
-		}
-
-		this.informer = new PlayerInformer(config);
-
-		this.registerListeners();
-		this.getLogger().info("Modifyworld enabled!");
-
-		this.saveConfig();
-	}
-
-	@Override
-	public void onDisable() {
-		this.listeners.clear();
-		this.config = null;
-
-		this.getLogger().info("Modifyworld successfully disabled!");
-	}
-
-	protected void initializeConfiguration(FileConfiguration config) {
-		// Flags
-		config.set("item-restrictions", false);
-		config.set("inform-players", true);
-		config.set("whitelist", false);
-		config.set("use-material-names", true);
-		config.set("drop-restricted-item", false);
-		config.set("item-use-check", false);
-		config.set("check-metadata", false);
-	}
-
-	protected void registerListeners() {
-		for (Class listenerClass : LISTENERS) {
-			try {
-				Constructor constructor = listenerClass.getConstructor(Plugin.class, ConfigurationSection.class, PlayerInformer.class);
-				ModifyworldListener listener = (ModifyworldListener) constructor.newInstance(this, this.getConfig(), this.informer);
-				this.listeners.add(listener);
-			} catch (Throwable e) {
-				this.getLogger().warning("Failed to initialize \"" + listenerClass.getName() + "\" listener");
-				e.printStackTrace();
-			}
-		}
-	}
-
-    public InputStream getLocalizedResource(String path) {
-        return getLocalizedResource(path, Locale.getDefault());
-    }
-
-    public InputStream getLocalizedResource(String path, Locale locale) {
-        InputStream ret;
-        ret = getResource("lang/" + locale.toString() + "/" + path); // Country-specific
-        if (ret == null && !locale.getCountry().isEmpty()) { // Available without country-specific variant
-            ret = getResource("lang/" + locale.getLanguage() + "/" + path);
-        }
-        if (ret == null) { // Unlocalized
-            ret = getResource(path);
-        }
-        return ret;
-    }
-
-    private YamlConfiguration loadBaseLanguage(String path, Locale locale) throws IOException, InvalidConfigurationException {
-        InputStream load = getResource("lang/" + locale.getLanguage() + "/" + path);
-        if (load != null) {
-            YamlConfiguration conf = new YamlConfiguration();
-            conf.options().copyDefaults(true);
-            conf.load(new InputStreamReader(load));
-            YamlConfiguration def = loadUnlocalized(path);
-            if (def != null) {
-                conf.setDefaults(def);
+    @Override
+    public void onEnable() {
+        try {
+            config = getConfig();
+            informer = new PlayerInformer(config);
+            // Construct every listener before registering any of them.
+            listeners = createListeners();
+            for (ModifyworldListener listener : listeners) {
+                getServer().getPluginManager().registerEvents(listener, this);
             }
-            return conf;
+            getLogger().info("Modifyworld enabled!");
+        } catch (RuntimeException | LinkageError failure) {
+            clearListeners();
+            getLogger().log(Level.SEVERE,
+                    "Modifyworld startup failed. Protection is NOT active. Fix the error and restart the server.",
+                    failure);
+            getServer().getPluginManager().disablePlugin(this);
         }
-        return null;
     }
 
-    private YamlConfiguration loadUnlocalized(String path) throws IOException, InvalidConfigurationException {
-        InputStream load = getResource(path);
-        if (load != null) {
-            YamlConfiguration conf = new YamlConfiguration();
-            conf.load(new InputStreamReader(load));
-            return conf;
+    protected List<ModifyworldListener> createListeners() {
+        java.util.ArrayList<ModifyworldListener> result = new java.util.ArrayList<>(List.of(
+                new PlayerListener(this, config, informer),
+                new ContainerListener(this, config, informer),
+                new EntityListener(this, config, informer),
+                new BlockListener(this, config, informer),
+                new VehicleListener(this, config, informer)));
+        if (config.getBoolean("require-login-permission")) {
+            result.add(new LoginListener(this, config, informer));
         }
-        return null;
+        return List.copyOf(result);
     }
 
-    public YamlConfiguration getLocalizedConfig(String path) throws InvalidConfigurationException, IOException {
-        return getLocalizedConfig(path, Locale.getDefault());
+    protected void clearListeners() {
+        HandlerList.unregisterAll(this);
+        listeners = List.of();
+        informer = null;
     }
 
-    public YamlConfiguration getLocalizedConfig(String path, Locale locale) throws InvalidConfigurationException, IOException {
-        YamlConfiguration base = new YamlConfiguration();
-        InputStream load =  getResource("lang/" + locale.toString() + "/" + path); // Country-specific
-        if (load != null) {
-            base.load(new InputStreamReader(load));
-            base.options().copyDefaults(true);
-            YamlConfiguration def = loadBaseLanguage(path, locale);
-            if (def == null) {
-                def = loadUnlocalized(path);
-            }
-            if (def != null) {
-                base.setDefaults(def);
-            }
-        } else {
-            base = loadBaseLanguage(path, locale);
-            if (base == null) {
-                base = loadUnlocalized(path);
-            }
+    @Override
+    public void onDisable() {
+        clearListeners();
+        config = null;
+        getLogger().info("Modifyworld disabled.");
+    }
+
+    @Override
+    public FileConfiguration getConfig() {
+        if (config == null) reloadConfig();
+        return config;
+    }
+
+    @Override
+    public void reloadConfig() {
+        if (listeners != null && !listeners.isEmpty()) {
+            throw new IllegalStateException("Live configuration reload is unsupported; restart the server.");
         }
-        return base;
+        try {
+            config = PluginConfiguration.load(new File(getDataFolder(), "config.yml"),
+                    getResource("config.yml"));
+        } catch (IOException | InvalidConfigurationException failure) {
+            throw new IllegalStateException("Cannot load Modifyworld config.yml", failure);
+        }
     }
 
-	@Override
-	public FileConfiguration getConfig() {
-		if (this.config == null) {
-			this.reloadConfig();
-		}
-
-		return this.config;
-	}
-
-	@Override
-	public void saveConfig() {
-		try {
-			this.config.save(configFile);
-		} catch (IOException e) {
-			this.getLogger().severe("Failed to save configuration file: " + e.getMessage());
-		}
-	}
-
-	@Override
-	public void reloadConfig() {
-		this.config = new YamlConfiguration();
-		config.options().pathSeparator('/');
-
-		try {
-			config.load(configFile);
-		} catch (FileNotFoundException e) {
-			this.getLogger().severe("Configuration file not found - deploying default one");
-			InputStream defConfigStream = getLocalizedResource("config.yml");
-			if (defConfigStream != null) {
-				try {
-					this.config.load(new InputStreamReader(defConfigStream));
-				} catch (Exception de) {
-					this.getLogger().severe("Default config file is broken. Please tell this to Modifyworld author.");
-				}
-			}
-		} catch (Exception e) {
-			this.getLogger().severe("Failed to load configuration file: " + e.getMessage());
-		}
-
-		InputStream defConfigStream = getLocalizedResource("config.yml");
-		if (defConfigStream != null) {
-			this.config.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(defConfigStream)));
-		}
-	}
+    @Override
+    public void saveConfig() {
+        if (config == null) throw new IllegalStateException("No valid configuration to save");
+        try {
+            config.save(new File(getDataFolder(), "config.yml"));
+        } catch (IOException failure) {
+            throw new IllegalStateException("Cannot save Modifyworld config.yml", failure);
+        }
+    }
 }

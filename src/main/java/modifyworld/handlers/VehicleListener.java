@@ -1,3 +1,4 @@
+// Modified on 2026-09-28: use the supported collision cancellation API.
 // Modified on 2026-09-28: move to the neutral modifyworld namespace.
 /*
  * Modifyworld - PermissionsEx ruleset plugin for Bukkit
@@ -73,8 +74,6 @@ public class VehicleListener extends ModifyworldListener {
 		Player player = (Player) event.getEntity();
 		if (_permissionDenied(player, "modifyworld.vehicle.collide", event.getVehicle())) {
 			event.setCancelled(true);
-			event.setCollisionCancelled(true);
-			event.setPickupCancelled(true);
 		}
 	}
 }
