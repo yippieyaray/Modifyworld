@@ -22,8 +22,12 @@ public class LoginListener extends ModifyworldListener {
     public void onLogin(PlayerLoginEvent event) {
         if (event.getResult() == PlayerLoginEvent.Result.ALLOWED
                 && _permissionDenied(event.getPlayer(), "modifyworld.login")) {
+            String message = informer.getMessage("modifyworld.login");
+            if (message == null) {
+                message = PlayerInformer.PERMISSION_DENIED;
+            }
             event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST,
-                    LegacyComponentSerializer.legacyAmpersand().deserialize(informer.getMessage("modifyworld.login")));
+                    LegacyComponentSerializer.legacyAmpersand().deserialize(message));
         }
     }
 }

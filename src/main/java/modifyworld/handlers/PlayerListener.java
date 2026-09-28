@@ -42,12 +42,10 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.SpawnEggMeta;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.util.Vector;
 import modifyworld.ModifyworldListener;
 import modifyworld.PlayerInformer;
 
@@ -243,7 +241,7 @@ public class PlayerListener extends ModifyworldListener {
 				}
 				default -> { }
 			}
-			if (heldMaterial.name().endsWith("_SPAWN_EGG")) {
+			if (held != null && heldMaterial.name().endsWith("_SPAWN_EGG")) {
 				SpawnEggMeta meta = (SpawnEggMeta) held.getItemMeta();
 				EntityType type = meta.getCustomSpawnedType();
 				if (type == null) {

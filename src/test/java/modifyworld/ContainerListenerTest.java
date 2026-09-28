@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import java.util.Objects;
 import java.util.Set;
 import static org.mockito.Mockito.*;
 
@@ -43,13 +44,15 @@ class ContainerListenerTest {
         when(view.getTopInventory()).thenReturn(top);
         when(top.getSize()).thenReturn(27);
         when(top.getType()).thenReturn(InventoryType.CHEST);
-        when(player.getInventory()).thenReturn(bottom);
+        when(player.getInventory()).thenReturn(Objects.requireNonNull(bottom));
         when(player.hasPermission(anyString())).thenReturn(true);
         tnt = mock(ItemStack.class);
         when(tnt.getType()).thenReturn(Material.TNT);
     }
 
     private InventoryClickEvent click(InventoryAction action, int slot) {
+        // Mockito returns a mock here, but its generic factory lacks JDT null annotations.
+        @SuppressWarnings("null")
         InventoryClickEvent event = mock(InventoryClickEvent.class);
         when(event.getWhoClicked()).thenReturn(player);
         when(event.getView()).thenReturn(view);
