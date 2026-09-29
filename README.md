@@ -336,7 +336,7 @@ real event classes. Run `mvn verify` to execute them and package the beta.
 ### Before the first production release
 
 - [ ] Complete and inspect a clean packaged build, including filtered `plugin.yml`.
-- [ ] Include the license text in the distribution and finish the source/license audit.
+- [x] Include license text, provenance notices, and corresponding project source in the distribution.
 - [ ] Start an isolated Paper 26.2 server with LuckPerms and WorldGuard; record exact versions.
 - [ ] Verify group/world rules with non-OP players, world changes, wildcards, and explicit denials.
 - [ ] Test both hands: TNT placement/ignition, fire charges, creeper ignition, lava sources and cauldrons.
@@ -353,8 +353,13 @@ Original Modifyworld by t3hk0d3 and the contributors to
 [PEXPlugins/Modifyworld](https://github.com/PEXPlugins/Modifyworld).
 Paper port maintained in [this fork](https://github.com/yippieyaray/Modifyworld).
 
-The inherited source notices grant **GNU GPL version 2 or later**. Original
-copyright notices are retained. Before distributing a release, the full license
-text and corresponding source distribution requirements must be addressed; the
-inherited `PlayerInformer.java` also needs its missing file-level license notice
-and provenance reviewed. See the [GNU GPLv2 text](https://www.gnu.org/licenses/gpl-2.0).
+This unofficial community port is distributed under **GNU GPL version 2 or later**
+(`GPL-2.0-or-later`). See [LICENSE](LICENSE) and [NOTICE](NOTICE) for the full
+license text, attribution, modification summary and source provenance.
+Original copyright notices are retained. The software comes without warranty.
+
+`Modifyworld.jar` includes LICENSE and NOTICE under `META-INF/`.
+`Modifyworld-bin.zip` includes the JAR, documentation, license and the complete
+corresponding project source under `source/`, including tests and Maven build files.
+Publish this ZIP alongside the standalone JAR and use a release tag matching the
+source used for the build. Private server configurations are not included.

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+// Modified or added for the Paper port on 2026-09-28 and 2026-09-29; see NOTICE.
 // Modified on 2026-09-28: validate configuration and make listener startup transactional.
 /*
  * Modifyworld - PermissionsEx ruleset plugin for Bukkit

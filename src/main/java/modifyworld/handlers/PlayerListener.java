@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+// Modified or added for the Paper port on 2026-09-28 and 2026-09-29; see NOTICE.
 // Modified on 2026-09-28: use Paper chat and explicit interaction results.
 // Modified on 2026-09-28: check actual crafting output for every extraction mode.
 // Modified on 2026-09-28: delegate container transfers to ContainerListener.

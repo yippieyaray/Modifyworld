@@ -5,6 +5,13 @@
     <version>2.0.0-BETA.3</version>
     <name>Modifyworld</name>
     <url>https://github.com/yippieyaray/Modifyworld</url>
+    <licenses>
+        <license>
+            <name>GNU General Public License, version 2 or later</name>
+            <url>https://www.gnu.org/licenses/old-licenses/gpl-2.0.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
     <issueManagement>
         <system>GitHub</system>
         <url>https://github.com/yippieyaray/Modifyworld/issues</url>
@@ -24,6 +31,15 @@
                     <include>**</include>
                 </includes>
                 <filtering>true</filtering>
+            </resource>
+            <resource>
+                <directory>${project.basedir}</directory>
+                <targetPath>META-INF</targetPath>
+                <filtering>false</filtering>
+                <includes>
+                    <include>LICENSE</include>
+                    <include>NOTICE</include>
+                </includes>
             </resource>
         </resources>
         <plugins>

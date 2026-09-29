@@ -1,0 +1,37 @@
+Modifyworld for Paper — unofficial community port
+
+License: GNU General Public License version 2 or (at your option) any later version
+(SPDX-License-Identifier: GPL-2.0-or-later). See LICENSE for the GPLv2 text.
+
+Original project: https://github.com/PEXPlugins/Modifyworld
+Original source notices: Copyright (C) 2011 t3hk0d3 http://www.tehkode.ru
+Original authors and contributors retain their respective rights.
+Paper port: https://github.com/yippieyaray/Modifyworld
+Port modifications by Raymond (yippieyaray), 2026-09-28 through 2026-09-29.
+
+Changes include the Java 25/Paper 26.2 build, neutral Java package namespace,
+Bukkit permission checks for LuckPerms, inventory/crafting/hazard handling,
+startup validation, configuration migration, localization, OP bypass and tests.
+This is an independent fork, not an official release by the original maintainers.
+
+PlayerInformer.java provenance:
+Introduced by t3hk0d3 on 2012-06-07 in upstream commit
+46464c38d0b958d2d0adff5af36345b9e49580c0, as part of the GPL-2.0-or-later
+Modifyworld refactoring of ModifyworldListener and the event handlers.
+The introduced file lacked a standalone license header. The provenance and
+license marker in this fork were added during the 2026-09-29 source review;
+they are not presented as an original upstream notice.
+Later upstream contributors include Dabo Ross and zml/zml2008; see git history.
+
+Distribution:
+The binary ZIP includes the complete project source, resources, tests and Maven
+build/assembly files in source/. Build with JDK 25 and Maven as described in
+README.md. Maven resolves the dependencies declared in pom.xml.
+Paper API is provided by the server; JUnit and Mockito are test dependencies.
+These dependencies are not bundled in the plugin JAR and retain their own licenses.
+When distributing the standalone JAR, also provide the corresponding source
+from the same release (the binary ZIP includes it). Keep release tags aligned
+with the exact source used to build the published JAR.
+
+This program is distributed WITHOUT ANY WARRANTY; without even the implied
+warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See LICENSE.
