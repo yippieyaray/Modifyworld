@@ -62,12 +62,12 @@ public class Modifyworld extends JavaPlugin {
     }
 
     protected List<ModifyworldListener> createListeners() {
-        java.util.ArrayList<ModifyworldListener> result = new java.util.ArrayList<>(List.of(
-                new PlayerListener(this, config, informer),
-                new ContainerListener(this, config, informer),
-                new EntityListener(this, config, informer),
-                new BlockListener(this, config, informer),
-                new VehicleListener(this, config, informer)));
+        java.util.ArrayList<ModifyworldListener> result = new java.util.ArrayList<>();
+        result.add(new PlayerListener(this, config, informer));
+        result.add(new ContainerListener(this, config, informer));
+        result.add(new EntityListener(this, config, informer));
+        result.add(new BlockListener(this, config, informer));
+        result.add(new VehicleListener(this, config, informer));
         if (config.getBoolean("require-login-permission")) {
             result.add(new LoginListener(this, config, informer));
         }
