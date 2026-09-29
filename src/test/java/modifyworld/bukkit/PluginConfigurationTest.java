@@ -19,6 +19,80 @@ class PluginConfigurationTest {
         return getClass().getResourceAsStream("/config.yml");
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"es", "fr"})
+    void additionalLanguagesAreInstalledCompleteAndMigrated(String language) throws Exception {
+        Path file = directory.resolve("config.yml");
+        Files.writeString(file, "language: " + language + "\n");
+        var config = PluginConfiguration.load(file.toFile(), defaults());
+        var english = new org.bukkit.configuration.file.YamlConfiguration();
+        english.options().pathSeparator('/');
+        english.load(directory.resolve("lang/en.yml").toFile());
+        var selected = new org.bukkit.configuration.file.YamlConfiguration();
+        selected.options().pathSeparator('/');
+        selected.load(directory.resolve("lang/" + language + ".yml").toFile());
+        assertEquals(english.getKeys(false), selected.getKeys(false));
+        var pattern = java.util.regex.Pattern.compile("\\$[0-9]+|%s|&[a-f0-9]");
+        for (String key : english.getKeys(false)) {
+            assertEquals(pattern.matcher(english.getString(key)).results().map(m -> m.group()).toList(),
+                    pattern.matcher(selected.getString(key)).results().map(m -> m.group()).toList(), key);
+            assertEquals(selected.getString(key), config.getString("messages/" + key));
+        }
+        Files.writeString(file, "language: " + language + "\nmessages:\n  modifyworld.chat: Custom\n");
+        config = PluginConfiguration.load(file.toFile(), defaults());
+        assertEquals("own", config.getString("language"));
+        assertEquals(selected.getString("modifyworld.items.take"), config.getString("messages/modifyworld.items.take"));
+    }
+
+    @Test
+    void existingBackupIsPreservedAndOwnWithoutAFileIsRejected() throws Exception {
+        Path file = directory.resolve("config.yml");
+        Path backup = directory.resolve("config.yml.bak");
+        Files.writeString(backup, "Earlier backup");
+        Files.writeString(file, "language: de\n");
+        PluginConfiguration.load(file.toFile(), defaults());
+        assertEquals("Earlier backup", Files.readString(backup));
+        assertEquals("language: de\n", Files.readString(directory.resolve("config.yml.bak.1")));
+        Files.writeString(file, "language: own\n");
+        assertThrows(java.io.IOException.class, () -> PluginConfiguration.load(file.toFile(), defaults()));
+        assertEquals("language: own\n", Files.readString(file));
+    }
+
+    @Test
+    void migrationIsIdempotentAndPreservesSettingsAndBackup() throws Exception {
+        Path file = directory.resolve("config.yml");
+        String original = "# Personal settings\nwhitelist: true\ninform-players: false\nmessages:\n  modifyworld.chat: Hallo $1\n";
+        Files.writeString(file, original);
+        var config = PluginConfiguration.load(file.toFile(), defaults());
+        assertEquals("own", config.getString("language"));
+        assertFalse(config.getBoolean("inform-players"));
+        assertTrue(config.getBoolean("require-login-permission"));
+        assertEquals(original, Files.readString(directory.resolve("config.yml.bak")));
+        String migrated = Files.readString(file);
+        String own = Files.readString(directory.resolve("lang/own.yml"));
+        assertFalse(migrated.contains("modifyworld.chat"));
+        assertFalse(migrated.contains("\nwhitelist:"));
+        assertTrue(migrated.contains("op-bypass: false"));
+        assertTrue(own.contains("Hallo $1"));
+        PluginConfiguration.load(file.toFile(), defaults());
+        assertEquals(migrated, Files.readString(file));
+        assertEquals(own, Files.readString(directory.resolve("lang/own.yml")));
+        assertFalse(Files.exists(directory.resolve("config.yml.bak.1")));
+    }
+
+    @Test
+    void conflictingOwnFileStopsMigrationWithoutChangingUserFiles() throws Exception {
+        Path file = directory.resolve("config.yml");
+        String original = "messages:\n  modifyworld.chat: Original\n";
+        Files.writeString(file, original);
+        Files.createDirectories(directory.resolve("lang"));
+        Path own = directory.resolve("lang/own.yml");
+        Files.writeString(own, "modifyworld.chat: Existing\n");
+        assertThrows(java.io.IOException.class, () -> PluginConfiguration.load(file.toFile(), defaults()));
+        assertEquals(original, Files.readString(file));
+        assertEquals("modifyworld.chat: Existing\n", Files.readString(own));
+    }
+
     @Test
     void selectedLanguageReachesPlayerWithFormattingAndOverrides() throws Exception {
         Path file = directory.resolve("config.yml");
@@ -50,8 +124,9 @@ class PluginConfigurationTest {
         assertTrue(Files.exists(directory.resolve("lang/de.yml")));
         assertEquals("Custom chat", config.getString("messages/modifyworld.chat"));
         assertEquals("Du darfst &a$1&4 nicht mit einem Eimer aufnehmen.", config.getString("messages/modifyworld.bucket.fill"));
-        assertEquals(original, Files.readString(file));
-        Path german = directory.resolve("lang/de.yml");
+        assertEquals(original, Files.readString(directory.resolve("config.yml.bak")));
+        assertEquals("own", config.getString("language"));
+        Path german = directory.resolve("lang/own.yml");
         Files.writeString(german, "modifyworld.bucket.fill: Custom bucket\n");
         config = PluginConfiguration.load(file.toFile(), defaults());
         assertEquals("Custom bucket", config.getString("messages/modifyworld.bucket.fill"));
@@ -94,11 +169,11 @@ class PluginConfigurationTest {
         assertFalse(config.getBoolean("item-use-check"));
         assertTrue(config.getBoolean("require-login-permission"));
         assertNotNull(config.getString("messages/default-message"));
-        assertEquals(original, Files.readString(file));
+        assertEquals(original, Files.readString(directory.resolve("config.yml.bak")));
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"language: fr", "op-bypass: 'true'", "messages: [", "use-material-names: false", "check-metadata: true",
+    @ValueSource(strings = {"language: unknown", "op-bypass: 'true'", "messages: [", "use-material-names: false", "check-metadata: true",
         "item-use-check: 'true'", "whitelist: 'true'", "require-login-permission: 'false'", "messages: invalid", "messages:\n  message-format: '%q'",
         "messages:\n  modifyworld.chat: 42"})
     void invalidConfigurationIsRejectedWithoutRewritingIt(String original) throws Exception {
@@ -138,7 +213,7 @@ class PluginConfigurationTest {
         Files.writeString(file, original);
         var config = PluginConfiguration.load(file.toFile(), defaults());
         assertEquals(expected, config.getBoolean("require-login-permission"));
-        assertEquals(original, Files.readString(file));
+        assertEquals(original, Files.readString(directory.resolve("config.yml.bak")));
     }
 
 }

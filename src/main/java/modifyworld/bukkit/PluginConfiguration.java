@@ -12,7 +12,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 
-/** Loads configuration without overwriting invalid or existing user files. */
+/** Validates and migrates configuration, retaining a backup before each rewrite. */
 final class PluginConfiguration {
     private PluginConfiguration() { }
 
@@ -29,6 +29,8 @@ final class PluginConfiguration {
         candidate.options().pathSeparator('/');
         boolean exists = Files.exists(file.toPath());
         if (exists) candidate.load(file);
+        boolean migrate = exists && (candidate.contains("whitelist", true)
+                || defaults.getKeys(false).stream().anyMatch(key -> !candidate.contains(key, true)));
         // Resolve explicit legacy settings before adding defaults for the new key.
         if (candidate.contains("whitelist", true)) {
             if (!candidate.isBoolean("whitelist")) {
@@ -48,14 +50,58 @@ final class PluginConfiguration {
             }
         }
         validate(candidate);
-        if (!exists) {
-            Files.createDirectories(file.toPath().toAbsolutePath().getParent());
-            candidate.save(file);
-        }
+        var legacy = candidate.getConfigurationSection("messages").getValues(false);
+        boolean migrateMessages = exists && !legacy.isEmpty();
         YamlConfiguration messages = LanguageFiles.load(file.getAbsoluteFile().getParentFile(),
                 candidate.getString("language"));
-        for (var entry : candidate.getConfigurationSection("messages").getValues(false).entrySet()) {
-            messages.set(entry.getKey(), entry.getValue());
+        for (var entry : legacy.entrySet()) messages.set(entry.getKey(), entry.getValue());
+        // Validate effective messages before touching the original configuration.
+        YamlConfiguration effective = new YamlConfiguration();
+        effective.options().pathSeparator('/');
+        effective.loadFromString(candidate.saveToString());
+        effective.createSection("messages", messages.getValues(false));
+        validate(effective);
+        if (migrateMessages) {
+            var own = file.toPath().toAbsolutePath().getParent().resolve("lang/own.yml");
+            if (Files.exists(own)) {
+                YamlConfiguration existing = new YamlConfiguration();
+                existing.options().pathSeparator('/');
+                existing.load(own.toFile());
+                if (!existing.getValues(false).equals(messages.getValues(false))) {
+                    throw new IOException("Cannot migrate messages: lang/own.yml already exists. "
+                            + "Move or merge it manually; config.yml was not changed.");
+                }
+            }
+        }
+        if (!exists || migrate || migrateMessages) {
+            var path = file.toPath().toAbsolutePath();
+            Files.createDirectories(path.getParent());
+            if (exists) {
+                int suffix = 0;
+                java.nio.file.Path backup;
+                do {
+                    backup = path.resolveSibling("config.yml.bak" + (suffix == 0 ? "" : "." + suffix));
+                    suffix++;
+                } while (Files.exists(backup));
+                Files.copy(path, backup);
+            }
+            if (migrateMessages) {
+                var own = path.getParent().resolve("lang/own.yml");
+                if (!Files.exists(own)) Files.writeString(own, messages.saveToString(),
+                        StandardCharsets.UTF_8, java.nio.file.StandardOpenOption.CREATE_NEW);
+                candidate.set("language", "own");
+            }
+            candidate.set("whitelist", null);
+            candidate.createSection("messages");
+            // Keep an empty override section for compatibility, never persist resolved messages.
+            var temporary = Files.createTempFile(path.getParent(), "config-", ".tmp");
+            try {
+                Files.writeString(temporary, candidate.saveToString(), StandardCharsets.UTF_8);
+                Files.move(temporary, path, java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            } finally {
+                Files.deleteIfExists(temporary);
+            }
         }
         candidate.createSection("messages", messages.getValues(false));
         validate(candidate);
@@ -71,8 +117,8 @@ final class PluginConfiguration {
             throw new InvalidConfigurationException("Migrate numeric/metadata permissions first: "
                     + "use-material-names must be true and check-metadata must be false");
         }
-        if (!config.isString("language") || !java.util.Set.of("en", "de").contains(config.getString("language"))) {
-            throw new InvalidConfigurationException("language must be en or de");
+        if (!config.isString("language") || !(LanguageFiles.LANGUAGES.contains(config.getString("language")) || "own".equals(config.getString("language")))) {
+            throw new InvalidConfigurationException("language must be en, de, es, fr or own");
         }
         ConfigurationSection messages = config.getConfigurationSection("messages");
         if (messages == null) throw new InvalidConfigurationException("messages must be a mapping");

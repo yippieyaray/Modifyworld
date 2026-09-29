@@ -8,20 +8,21 @@ to **Paper 26.2, Java 25, and LuckPerms**. WorldGuard remains responsible for
 regions. Modifyworld adds permission checks and does not clear another plugin's
 event cancellation.
 
-> **Beta — 2.0.0-BETA.2**
+> **Beta — 2.0.0-BETA.3**
 
 ## Requirements and compatibility
 
 | Component | Target / status |
 | --- | --- |
 | Minecraft edition | Java Edition |
-| Server | Paper for Minecraft 26.2 |
+| Server | Developed and tested against Paper for Minecraft 26.2 |
+| Newer Paper versions | May work but have not yet been verified |
 | Java | Java 25 |
 | Compile-time Paper API | `26.2.build.129-stable`, pinned in [pom.xml](pom.xml) |
 | Permissions | LuckPerms is the intended provider; Modifyworld uses Bukkit permission checks |
 | Regions | Optional WorldGuard installation with its required dependencies |
 | PermissionsEx / Vault | Neither is required or used |
-| Other platforms | Spigot, Folia, other Paper forks, and other Minecraft versions are not supported targets of this port |
+| Other platforms | Spigot, Folia are not supported targets of this port |
 
 The API version is a build target, not proof of live compatibility. Exact tested
 Paper/LuckPerms/WorldGuard versions will be recorded after integration testing.
@@ -50,7 +51,8 @@ evaluated on subsequent checks without a Modifyworld-specific permission cache.
 
 An invalid configuration or listener startup failure disables Modifyworld and
 logs that protection is **not active**. This does not shut down the Minecraft
-server. Existing configuration files are not automatically rewritten at startup.
+server. Existing configurations are migrated with a backup when options are missing
+or legacy messages are present; invalid configurations are not rewritten.
 
 ## How permissions work
 
@@ -211,7 +213,7 @@ The full default file is [config.yml](src/main/resources/config.yml).
 | `item-restrictions` | `false` | Scan inventory on monitored interactions, pickup/drop, and held-slot changes; remove items denied by `items.have` |
 | `drop-restricted-item` | `false` | During those inventory scans, drop removed items in the world instead of deleting them |
 | `op-bypass` | `false` | Operators bypass all Modifyworld permission checks, including explicit denials; other plugins and Minecraft admission checks remain effective |
-| `language` | `en` | Server message language: `en` or `de` |
+| `language` | `en` | Server message language: `en`, `de`, `es`, `fr`, or `own` |
 | `require-login-permission` | `false` | Require `modifyworld.login` in addition to Minecraft's admission checks |
 
 `item-restrictions` is an event-driven scan, not continuous monitoring. A denial
@@ -225,24 +227,34 @@ If Minecraft's whitelist is your only admission policy, leave
 isolated legacy login-event adapter so that Bukkit permissions can be checked
 before entry. Its live LuckPerms behavior still needs verification.
 
-Boolean settings must use YAML booleans (`true`/`false`, without quotes). Defaults fill
-missing options in memory; existing files and comments are preserved at startup.
+Boolean settings must use YAML booleans (`true`/`false`, without quotes).
+Missing options are added to existing files at startup, preserving configured values.
+Before rewriting, the original is copied to `config.yml.bak` (then `.bak.1`, etc.).
+YAML formatting may change; the backup preserves the exact original file.
+The legacy `whitelist` key is removed after resolving `require-login-permission`.
+Numeric material/metadata settings still require manual permission migration.
 
 ### Messages
 
-At first configuration load, `lang/en.yml` and `lang/de.yml` are copied into the
-plugin folder. Select `language: de` for German or `language: en` for English.
+Missing bundled language files are copied into the plugin folder at startup:
+`lang/en.yml`, `lang/de.yml`, `lang/es.yml`, and `lang/fr.yml`.
+Select `language: en` (English), `de` (German), `es` (Spanish), or `fr` (French).
 Restart after changes. Existing language files are never overwritten.
 Missing keys fall back to the bundled selected language, then bundled English,
 without rewriting your files. Invalid selected language files stop startup.
 Material and entity names in placeholders remain English.
 
-Explicit `messages` entries in `config.yml` override language files. Existing
-installations may already contain a complete message section: remove the entries
-you want the selected language to supply, retaining any personal overrides.
-New configurations contain only `messages: {}`. Bundled German and English messages describe the denied action directly;
-legacy configuration switches are not imported.
+Non-empty legacy `messages` sections are automatically migrated to `lang/own.yml`,
+and `language` is set to `own`. Missing messages are filled from the previously
+selected language (English when unspecified). The old section becomes `messages: {}`.
+Edit `lang/own.yml` directly after migration. Missing keys in an own file fall back
+to bundled English. Selecting `own` requires that the file exists.
+A conflicting existing `own.yml` stops startup without changing the configuration
+or that language file. Move or merge the conflicting file manually before retrying.
+An identical existing file can be reused after an interrupted migration.
+Repeated startup does not rewrite an already migrated configuration.
 
+The following is an example of a legacy section that will be migrated:
 
 ```yaml
 messages:
@@ -259,7 +271,8 @@ For item interactions, $3 describes the target; for container transfers it descr
 the inventory type. Permission names are unaffected by message formatting.
 Existing language files are preserved on upgrades: to adopt the revised Beta 2
 texts, back up and remove the old language files while the server is stopped.
-The next startup recreates them; explicit `messages` overrides still take precedence.
+The next startup recreates them. With `language: own`, those files do not replace
+your custom messages; edit `own.yml` or explicitly select `en`, `de`, `es`, or `fr`.
 
 Use `%s` in `message-format`, `$permission` for the checked permission, and
 `$1`, `$2`, etc. for action arguments where available. `&` color codes are supported
