@@ -30,6 +30,7 @@ final class PluginConfiguration {
         boolean exists = Files.exists(file.toPath());
         if (exists) candidate.load(file);
         boolean migrate = exists && (candidate.contains("whitelist", true)
+                || candidate.contains("use-material-names", true) || candidate.contains("check-metadata", true)
                 || defaults.getKeys(false).stream().anyMatch(key -> !candidate.contains(key, true)));
         // Resolve explicit legacy settings before adding defaults for the new key.
         if (candidate.contains("whitelist", true)) {
@@ -92,6 +93,8 @@ final class PluginConfiguration {
                 candidate.set("language", "own");
             }
             candidate.set("whitelist", null);
+            candidate.set("use-material-names", null);
+            candidate.set("check-metadata", null);
             candidate.createSection("messages");
             // Keep an empty override section for compatibility, never persist resolved messages.
             var temporary = Files.createTempFile(path.getParent(), "config-", ".tmp");
@@ -109,13 +112,9 @@ final class PluginConfiguration {
     }
 
     static void validate(YamlConfiguration config) throws InvalidConfigurationException {
-        for (String key : new String[] {"use-material-names", "check-metadata", "item-use-check",
+        for (String key : new String[] {"item-use-check",
                 "op-bypass", "inform-players", "item-restrictions", "drop-restricted-item", "require-login-permission"}) {
             if (!config.isBoolean(key)) throw new InvalidConfigurationException(key + " must be a boolean");
-        }
-        if (!config.getBoolean("use-material-names") || config.getBoolean("check-metadata")) {
-            throw new InvalidConfigurationException("Migrate numeric/metadata permissions first: "
-                    + "use-material-names must be true and check-metadata must be false");
         }
         if (!config.isString("language") || !(LanguageFiles.LANGUAGES.contains(config.getString("language")) || "own".equals(config.getString("language")))) {
             throw new InvalidConfigurationException("language must be en, de, es, fr or own");

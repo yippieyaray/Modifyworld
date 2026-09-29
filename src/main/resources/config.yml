@@ -1,6 +1,4 @@
 # Modern material names only; legacy numeric IDs and metadata require migration.
-use-material-names: true
-check-metadata: false
 # Enable item-on-block/entity permission checks, including flint and steel.
 item-use-check: true
 inform-players: true

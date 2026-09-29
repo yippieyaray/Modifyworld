@@ -206,8 +206,6 @@ The full default file is [config.yml](src/main/resources/config.yml).
 
 | Setting | Default | Effect |
 | --- | --- | --- |
-| `use-material-names` | `true` | Required for this port; `false` stops startup |
-| `check-metadata` | `false` | Legacy data-value checks are unsupported; `true` stops startup |
 | `item-use-check` | `true` | Check the item used on a block/entity, including the actual hand; otherwise use ordinary interaction permissions |
 | `inform-players` | `true` | Send configured denial messages; deliberately silent checks such as pickup remain silent |
 | `item-restrictions` | `false` | Scan inventory on monitored interactions, pickup/drop, and held-slot changes; remove items denied by `items.have` |
@@ -232,7 +230,10 @@ Missing options are added to existing files at startup, preserving configured va
 Before rewriting, the original is copied to `config.yml.bak` (then `.bak.1`, etc.).
 YAML formatting may change; the backup preserves the exact original file.
 The legacy `whitelist` key is removed after resolving `require-login-permission`.
-Numeric material/metadata settings still require manual permission migration.
+The obsolete `use-material-names` and `check-metadata` options are removed during
+migration, regardless of their values. Modern material names are always used;
+legacy numeric IDs and data values are unsupported. This does not convert
+permissions stored in LuckPerms; those must be migrated separately.
 
 ### Messages
 

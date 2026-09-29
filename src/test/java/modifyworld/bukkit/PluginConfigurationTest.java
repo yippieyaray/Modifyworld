@@ -44,6 +44,32 @@ class PluginConfigurationTest {
         assertEquals(selected.getString("modifyworld.items.take"), config.getString("messages/modifyworld.items.take"));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"use-material-names: false", "check-metadata: true",
+        "use-material-names: false\ncheck-metadata: true", "use-material-names: true\ncheck-metadata: false"})
+    void obsoleteMaterialSwitchesAreRemovedWithoutBlockingMigration(String switches) throws Exception {
+        Path file = directory.resolve("config.yml");
+        String original = switches + "\nitem-restrictions: true\ninform-players: true\nwhitelist: false\n"
+                + "drop-restricted-item: true\nitem-use-check: true\nmessages:\n"
+                + "  message-format: '&f[&2System&f]&4 %s'\n"
+                + "  modifyworld.items.take: 'Hey, &a$1&4 das bleibt an seinem Platz!'\n";
+        Files.writeString(file, original);
+        var config = PluginConfiguration.load(file.toFile(), defaults());
+        assertEquals("own", config.getString("language"));
+        assertTrue(config.getBoolean("item-restrictions"));
+        assertTrue(config.getBoolean("drop-restricted-item"));
+        assertFalse(config.getBoolean("require-login-permission"));
+        assertEquals("Hey, &a$1&4 das bleibt an seinem Platz!", config.getString("messages/modifyworld.items.take"));
+        assertEquals(original, Files.readString(directory.resolve("config.yml.bak")));
+        String migrated = Files.readString(file);
+        assertFalse(migrated.contains("use-material-names:"));
+        assertFalse(migrated.contains("check-metadata:"));
+        assertFalse(config.contains("use-material-names"));
+        assertFalse(config.contains("check-metadata"));
+        PluginConfiguration.load(file.toFile(), defaults());
+        assertEquals(migrated, Files.readString(file));
+    }
+
     @Test
     void existingBackupIsPreservedAndOwnWithoutAFileIsRejected() throws Exception {
         Path file = directory.resolve("config.yml");
@@ -173,7 +199,7 @@ class PluginConfigurationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"language: unknown", "op-bypass: 'true'", "messages: [", "use-material-names: false", "check-metadata: true",
+    @ValueSource(strings = {"language: unknown", "op-bypass: 'true'", "messages: [",
         "item-use-check: 'true'", "whitelist: 'true'", "require-login-permission: 'false'", "messages: invalid", "messages:\n  message-format: '%q'",
         "messages:\n  modifyworld.chat: 42"})
     void invalidConfigurationIsRejectedWithoutRewritingIt(String original) throws Exception {
