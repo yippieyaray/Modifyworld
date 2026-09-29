@@ -63,6 +63,32 @@ class ContainerListenerTest {
     }
 
     @ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({
+        "TNT,tnt,take", "LAVA_BUCKET,lava bucket,take", "FLINT_AND_STEEL,flint and steel,take",
+        "TNT,tnt,put", "LAVA_BUCKET,lava bucket,put", "FLINT_AND_STEEL,flint and steel,put"
+    })
+    void transferMessagesDescribeTheItemInsteadOfTheAction(Material material, String description, String direction) {
+        YamlConfiguration config = new YamlConfiguration();
+        config.options().pathSeparator('/');
+        config.set("inform-players", true);
+        config.set("messages/message-format", "%s");
+        config.set("messages/modifyworld.items." + direction, "Item: $1; container: $3; permission: $permission");
+        listener = new ContainerListener(mock(Plugin.class), config, new PlayerInformer(config));
+        ItemStack item = mock(ItemStack.class);
+        when(item.getType()).thenReturn(material);
+        String permission = "modifyworld.items." + direction + "."
+                + material.name().toLowerCase(java.util.Locale.ROOT).replace("_", "") + ".of.chest";
+        when(player.hasPermission(permission)).thenReturn(false);
+        InventoryClickEvent event = click(direction.equals("take") ? InventoryAction.PICKUP_ALL : InventoryAction.PLACE_ALL, 0);
+        if (direction.equals("take")) when(event.getCurrentItem()).thenReturn(item);
+        else when(event.getCursor()).thenReturn(item);
+        listener.onClick(event);
+        verify(event).setCancelled(true);
+        verify(player).hasPermission(permission);
+        verify(player).sendMessage("Item: " + description + "; container: chest; permission: " + permission);
+    }
+
+    @ParameterizedTest
     @EnumSource(value = InventoryAction.class, names = {"PICKUP_ALL", "PICKUP_HALF", "PICKUP_ONE", "PICKUP_SOME", "DROP_ALL_SLOT", "DROP_ONE_SLOT", "CLONE_STACK", "PICKUP_ALL_INTO_BUNDLE", "PICKUP_SOME_INTO_BUNDLE"})
     void takingRequiresTakePermission(InventoryAction action) {
         InventoryClickEvent event = click(action, 0);

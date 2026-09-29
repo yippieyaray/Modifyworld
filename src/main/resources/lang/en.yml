@@ -1,23 +1,29 @@
-# English messages. Color codes and argument placeholders are supported.
+# Denial messages. $1 is the item/content/entity; $3 is the interaction target.
 message-format: '&f[&2Modifyworld&f]&4 %s'
-default-message: Sorry, you don't have enough permissions
-modifyworld.items.use: Stop, &a$1&4 won't fit into &a$3
-modifyworld.login: You are not allowed to join this server. Goodbye!
-modifyworld.blocks.interact: You are too jelly for &2$1
-modifyworld.blocks.place: This is wrong place for &a$1
-modifyworld.blocks.destroy: '&a$1&4 is tough for you'
-modifyworld.damage.deal: Your level is too low for &5$1
-modifyworld.chat: Your mouth is too dry
-modifyworld.chat.private: Listener is deaf :(
-modifyworld.items.have: Prohibited item &a$1&4 has been removed from your inventory.
-modifyworld.items.drop: This is indecent to scatter &a$1&4 around
-modifyworld.items.hold: Beware, &a$1&4 is cursed!
-modifyworld.items.craft: Sorry, but &a$1&4 is too complicated
-modifyworld.items.enchant: Sorry, &a$1&4 is too dangerous
-modifyworld.vehicle.enter.boat: You are too heavy for this &a$1
-modifyworld.vehicle.enter.minecart: Sorry, but &a$1&4 is too small
-modifyworld.vehicle.destroy: This &a$1&4 is legal property of &bUnited States of America
-modifyworld.tame: This &a$1&4 is too ferocious
-modifyworld.bucket.fill: This bucket is holey
-modifyworld.bucket.empty: You suddenly realized you still need &a$1
-modifyworld.usebeds: You can't sleep yet, there are monsters nearby
+default-message: 'You are not allowed to do that.'
+modifyworld.items.use: 'You may not use &a$1&4 on &a$3&4.'
+modifyworld.login: 'You are not allowed to join this server.'
+modifyworld.blocks.interact: 'You may not interact with &a$1&4.'
+modifyworld.blocks.place: 'You may not place &a$1&4 here.'
+modifyworld.blocks.destroy: 'You may not break &a$1&4.'
+modifyworld.damage.deal: 'You may not damage &a$1&4.'
+modifyworld.chat: 'You may not send chat messages.'
+modifyworld.chat.private: 'You may not send private messages.'
+modifyworld.items.have: 'You may not possess &a$1&4.'
+modifyworld.items.drop: 'You may not drop &a$1&4.'
+modifyworld.items.hold: 'You may not hold &a$1&4.'
+modifyworld.items.craft: 'You may not craft &a$1&4.'
+modifyworld.items.enchant: 'You may not enchant &a$1&4.'
+modifyworld.items.pickup: 'You may not pick up &a$1&4.'
+modifyworld.items.take: 'You may not take &a$1&4 from this container.'
+modifyworld.items.put: 'You may not put &a$1&4 into this container.'
+modifyworld.items.throw: 'You may not throw &a$1&4.'
+modifyworld.items.allowunknownaction: 'This inventory action is not allowed for &a$1&4.'
+modifyworld.vehicle.enter: 'You may not enter &a$1&4.'
+modifyworld.vehicle.destroy: 'You may not destroy &a$1&4.'
+modifyworld.tame: 'You may not tame &a$1&4.'
+modifyworld.interact: 'You may not interact with &a$1&4.'
+modifyworld.spawn: 'You may not spawn &a$1&4.'
+modifyworld.bucket.fill: 'You may not collect &a$1&4 with a bucket.'
+modifyworld.bucket.empty: 'You may not empty a bucket of &a$1&4 here.'
+modifyworld.usebeds: 'You may not use this bed.'

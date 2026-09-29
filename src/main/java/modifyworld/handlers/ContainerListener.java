@@ -34,7 +34,7 @@ public class ContainerListener extends ModifyworldListener {
     }
 
     private boolean denied(Player player, Inventory inventory, String action, ItemStack item) {
-        return present(item) && permissionDenied(player, "modifyworld.items", action,
+        return present(item) && permissionDenied(player, "modifyworld.items." + action,
                 item, "of", inventory.getType());
     }
 

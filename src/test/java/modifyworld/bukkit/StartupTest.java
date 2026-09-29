@@ -1,5 +1,8 @@
 package modifyworld.bukkit;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.command.ConsoleCommandSender;
 import java.util.List;
 import java.util.logging.Logger;
 import modifyworld.ModifyworldListener;
@@ -19,6 +22,7 @@ class StartupTest {
     private Modifyworld plugin;
     private PluginManager manager;
     private Logger logger;
+    private ConsoleCommandSender console;
     private YamlConfiguration config;
 
     @BeforeEach
@@ -28,6 +32,8 @@ class StartupTest {
         manager = mock(PluginManager.class);
         Server server = mock(Server.class);
         logger = mock(Logger.class);
+        console = mock(ConsoleCommandSender.class);
+        when(server.getConsoleSender()).thenReturn(console);
         doReturn(server).when(plugin).getServer();
         doReturn(logger).when(plugin).getLogger();
         when(server.getPluginManager()).thenReturn(manager);
@@ -42,7 +48,7 @@ class StartupTest {
         plugin.onEnable();
         verify(manager, times(5)).registerEvents(any(), same(plugin));
         verify(manager, never()).registerEvents(isA(LoginListener.class), same(plugin));
-        verify(logger).info("Modifyworld enabled!");
+        verify(console).sendMessage(Component.text("[Modifyworld] Modifyworld enabled!", NamedTextColor.GREEN));
         verify(manager, never()).disablePlugin(plugin);
     }
 
@@ -60,7 +66,7 @@ class StartupTest {
         plugin.onEnable();
         verify(manager, never()).registerEvents(any(), any());
         verify(manager).disablePlugin(plugin);
-        verify(logger, never()).info("Modifyworld enabled!");
+        verifyNoInteractions(console);
     }
 
     @Test
@@ -87,7 +93,7 @@ class StartupTest {
         assertEquals(0, handlers.getRegisteredListeners().length);
         assertTrue(plugin.listeners.isEmpty());
         verify(manager).disablePlugin(plugin);
-        verify(logger, never()).info("Modifyworld enabled!");
+        verifyNoInteractions(console);
     }
 
     @Test

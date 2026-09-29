@@ -8,7 +8,7 @@ to **Paper 26.2, Java 25, and LuckPerms**. WorldGuard remains responsible for
 regions. Modifyworld adds permission checks and does not clear another plugin's
 event cancellation.
 
-> **Beta — 2.0.0-BETA.1**
+> **Beta — 2.0.0-BETA.2**
 
 ## Requirements and compatibility
 
@@ -240,8 +240,8 @@ Material and entity names in placeholders remain English.
 Explicit `messages` entries in `config.yml` override language files. Existing
 installations may already contain a complete message section: remove the entries
 you want the selected language to supply, retaining any personal overrides.
-New configurations contain only `messages: {}`. German messages are based on the
-server owner's legacy texts; legacy configuration switches are not imported.
+New configurations contain only `messages: {}`. Bundled German and English messages describe the denied action directly;
+legacy configuration switches are not imported.
 
 
 ```yaml
@@ -254,6 +254,13 @@ messages:
 
 Keys under `messages` are literal permission names. A message for a parent node
 also applies to its more specific children, with `default-message` as fallback.
+$1 describes the item for container transfers and the contents for bucket actions.
+For item interactions, $3 describes the target; for container transfers it describes
+the inventory type. Permission names are unaffected by message formatting.
+Existing language files are preserved on upgrades: to adopt the revised Beta 2
+texts, back up and remove the old language files while the server is stopped.
+The next startup recreates them; explicit `messages` overrides still take precedence.
+
 Use `%s` in `message-format`, `$permission` for the checked permission, and
 `$1`, `$2`, etc. for action arguments where available. `&` color codes are supported
 by normal denial messages. The optional login rejection uses its own message

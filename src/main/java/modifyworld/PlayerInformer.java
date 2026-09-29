@@ -85,16 +85,33 @@ public class PlayerInformer {
 			return;
 		}
 
-		String message = getMessage(player, permission).replace("$permission", permission);
-
-		for (int i = 0; i < args.length; i++) {
-			message = message.replace("$" + (i + 1), describeObject(args[i]));
-		}
+        String message = formatMessage(permission, args);
 
 		if (message != null && !message.isEmpty()) {
 			player.sendMessage(String.format(messageFormat, message).replaceAll("&([a-z0-9])", "\u00A7$1"));
 		}
 	}
+
+    /** Resolve placeholders once, so replacement text cannot introduce new placeholders. */
+    public String formatMessage(String permission, Object... args) {
+        String template = getMessage(permission);
+        if (template == null) template = PERMISSION_DENIED;
+        var matcher = java.util.regex.Pattern.compile("\\$(permission|[1-9][0-9]*)").matcher(template);
+        return matcher.replaceAll(match -> {
+            String token = match.group(1);
+            String replacement = match.group();
+            if (token.equals("permission")) replacement = permission;
+            else {
+                try {
+                    int index = Integer.parseInt(token) - 1;
+                    if (index < args.length) replacement = describeObject(args[index]);
+                } catch (NumberFormatException ignored) {
+                    // Unknown placeholder numbers remain visible for configuration diagnosis.
+                }
+            }
+            return java.util.regex.Matcher.quoteReplacement(replacement);
+        });
+    }
 
 	protected String describeObject(Object obj) {
 		if (obj == null) return "air";
@@ -108,8 +125,8 @@ public class PlayerInformer {
 			return ((Entity) obj).getType().toString().toLowerCase(Locale.ROOT).replace("_", " ");
 		} else if (obj instanceof Block) { // Blocks
 			return describeMaterial(((Block) obj).getType());
-		} else if (obj instanceof Material) { // Just material
-			return describeMaterial((Material) obj);
+		} else if (obj instanceof Enum<?>) {
+            return ((Enum<?>) obj).name().toLowerCase(Locale.ROOT).replace("_", " ");
 		}
 
 		return obj.toString();

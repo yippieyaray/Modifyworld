@@ -19,6 +19,8 @@
  */
 package modifyworld.bukkit;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -46,7 +48,8 @@ public class Modifyworld extends JavaPlugin {
             for (ModifyworldListener listener : listeners) {
                 getServer().getPluginManager().registerEvents(listener, this);
             }
-            getLogger().info("Modifyworld enabled!");
+            getServer().getConsoleSender().sendMessage(
+                    Component.text("[Modifyworld] Modifyworld enabled!", NamedTextColor.GREEN));
         } catch (RuntimeException | LinkageError failure) {
             clearListeners();
             getLogger().log(Level.SEVERE,
@@ -96,6 +99,8 @@ public class Modifyworld extends JavaPlugin {
         try {
             config = PluginConfiguration.load(new File(getDataFolder(), "config.yml"),
                     getResource("config.yml"));
+            String language = config.getString("language");
+            getLogger().info("Language " + language + " (lang/" + language + ".yml loaded)");
         } catch (IOException | InvalidConfigurationException failure) {
             throw new IllegalStateException("Cannot load Modifyworld config.yml", failure);
         }

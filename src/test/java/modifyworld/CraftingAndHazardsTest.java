@@ -205,8 +205,11 @@ class CraftingAndHazardsTest {
                 ? content : Material.CAULDRON);
         CauldronLevelChangeEvent event = new CauldronLevelChangeEvent(block, player, reason, newState);
         when(player.hasPermission("modifyworld.bucket." + action + "." + name)).thenReturn(false);
+        PlayerInformer messages = mock(PlayerInformer.class);
+        blocks = new BlockListener(mock(Plugin.class), new YamlConfiguration(), messages);
         blocks.onCauldronBucket(event);
         assertTrue(event.isCancelled());
+        verify(messages).informPlayer(player, "modifyworld.bucket." + action + "." + name, name);
     }
 
     @Test

@@ -103,7 +103,7 @@ public class BlockListener extends ModifyworldListener {
 			case POWDER_SNOW_CAULDRON -> "powdersnow";
 			default -> null;
 		};
-		if (content != null && permissionDenied(player, "modifyworld.bucket", action, content)) {
+		if (content != null && permissionDenied(player, "modifyworld.bucket." + action, content)) {
 			event.setCancelled(true);
 		}
 	}

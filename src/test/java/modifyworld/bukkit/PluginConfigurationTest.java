@@ -20,6 +20,27 @@ class PluginConfigurationTest {
     }
 
     @Test
+    void selectedLanguageReachesPlayerWithFormattingAndOverrides() throws Exception {
+        Path file = directory.resolve("config.yml");
+        Files.writeString(file, "language: de\nmessages: {}\n");
+        var config = PluginConfiguration.load(file.toFile(), defaults());
+        var player = org.mockito.Mockito.mock(org.bukkit.entity.Player.class);
+        var informer = new modifyworld.PlayerInformer(config);
+        informer.informPlayer(player, "modifyworld.bucket.fill.lava", org.bukkit.Material.LAVA);
+        org.mockito.Mockito.verify(player).sendMessage("§f[§2Modifyworld§f]§4 Du darfst §alava§4 nicht mit einem Eimer aufnehmen.");
+        org.mockito.Mockito.reset(player);
+        Files.writeString(file, "language: de\nmessages:\n  modifyworld.bucket.fill: Custom $1\n");
+        config = PluginConfiguration.load(file.toFile(), defaults());
+        informer = new modifyworld.PlayerInformer(config);
+        informer.informPlayer(player, "modifyworld.bucket.fill.lava", org.bukkit.Material.LAVA);
+        org.mockito.Mockito.verify(player).sendMessage("§f[§2Modifyworld§f]§4 Custom lava");
+        org.mockito.Mockito.reset(player);
+        config.set("inform-players", false);
+        new modifyworld.PlayerInformer(config).informPlayer(player, "modifyworld.bucket.fill.lava");
+        org.mockito.Mockito.verifyNoInteractions(player);
+    }
+
+    @Test
     void languagesAreInstalledAndOverridesSurviveLanguageChanges() throws Exception {
         Path file = directory.resolve("config.yml");
         String original = "language: de\nmessages:\n  modifyworld.chat: Custom chat\n";
@@ -28,7 +49,7 @@ class PluginConfigurationTest {
         assertTrue(Files.exists(directory.resolve("lang/en.yml")));
         assertTrue(Files.exists(directory.resolve("lang/de.yml")));
         assertEquals("Custom chat", config.getString("messages/modifyworld.chat"));
-        assertEquals("Der Eimer ist heilig!", config.getString("messages/modifyworld.bucket.fill"));
+        assertEquals("Du darfst &a$1&4 nicht mit einem Eimer aufnehmen.", config.getString("messages/modifyworld.bucket.fill"));
         assertEquals(original, Files.readString(file));
         Path german = directory.resolve("lang/de.yml");
         Files.writeString(german, "modifyworld.bucket.fill: Custom bucket\n");
@@ -38,7 +59,7 @@ class PluginConfigurationTest {
         assertEquals("modifyworld.bucket.fill: Custom bucket\n", Files.readString(german));
         Files.writeString(file, "language: en\n");
         config = PluginConfiguration.load(file.toFile(), defaults());
-        assertEquals("This bucket is holey", config.getString("messages/modifyworld.bucket.fill"));
+        assertEquals("You may not collect &a$1&4 with a bucket.", config.getString("messages/modifyworld.bucket.fill"));
     }
 
     @Test

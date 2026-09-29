@@ -1,25 +1,29 @@
-# German messages. Color codes and argument placeholders are supported.
-message-format: '&f[&2System&f]&4 %s'
-default-message: Dein Level reicht fuer diese Aktion nicht!
-modifyworld.items.use: Mmmhh, &a$1&4 benutzen fuer &a$3 wird fuer Dich nicht klappen!
-modifyworld.login: Der Server ist nichts fuer Dich, Aufwiedersehen!
-modifyworld.blocks.interact: Dafuer bist noch zu schwach fuer &2$1
-modifyworld.blocks.place: Du kannst &a$1 hier nicht platzieren!
-modifyworld.blocks.destroy: Mmmh, &a$1&4 ist zu hart fuer Dich!
-modifyworld.damage.deal: Dein Level ist zu gering fuer &5$1
-modifyworld.chat: Die Zuhoerer sind leider taub!
-modifyworld.chat.private: Keine privat Gepraeche!
-modifyworld.items.have: Das verbotene Objekt &a$1&4 wurde Dir weggenommen!
-modifyworld.items.drop: Es ist nicht nett mit &a$1&4 herumzuwerfen!
-modifyworld.items.hold: Achtung, &a$1&4 ist verflucht!
-modifyworld.items.craft: Sorry, aber &a$1&4 ist fuer Dich zu kompliziert!
-modifyworld.items.enchant: Sorry, &a$1&4 ist fuer Dich zu gefaehrlich!
-modifyworld.items.pickup: Finger weg, &a$1&4 ist nichts fuer Dich!
-modifyworld.items.take: Hey, &a$1&4 das bleibt an seinem Platz!
-modifyworld.vehicle.enter.boat: Du bist zu schwer fuer &a$1
-modifyworld.vehicle.enter.minecart: Sorry, aber &a$1&4 ist zu klein fuer Dich!
-modifyworld.vehicle.destroy: Hey, &a$1&4 ist Staatseigentum!
-modifyworld.tame: Leider ist &a$1&4 zu boesartig!
-modifyworld.bucket.fill: Der Eimer ist heilig!
-modifyworld.bucket.empty: Ploetzlich merkst Du das &a$1 fuer Dich wichtig ist!
-modifyworld.usebeds: Du kannst nicht schlafen, ich hoere ein Monster!
+# Denial messages. $1 is the item/content/entity; $3 is the interaction target.
+message-format: '&f[&2Modifyworld&f]&4 %s'
+default-message: 'Du darfst diese Aktion nicht ausführen.'
+modifyworld.items.use: 'Du darfst &a$1&4 nicht an &a$3&4 benutzen.'
+modifyworld.login: 'Du darfst diesen Server nicht betreten.'
+modifyworld.blocks.interact: 'Du darfst &a$1&4 nicht benutzen.'
+modifyworld.blocks.place: 'Du darfst &a$1&4 hier nicht platzieren.'
+modifyworld.blocks.destroy: 'Du darfst &a$1&4 nicht zerstören.'
+modifyworld.damage.deal: 'Du darfst &a$1&4 keinen Schaden zufügen.'
+modifyworld.chat: 'Du darfst keine Chatnachrichten senden.'
+modifyworld.chat.private: 'Du darfst keine privaten Nachrichten senden.'
+modifyworld.items.have: 'Du darfst &a$1&4 nicht besitzen.'
+modifyworld.items.drop: 'Du darfst &a$1&4 nicht fallen lassen.'
+modifyworld.items.hold: 'Du darfst &a$1&4 nicht in der Hand halten.'
+modifyworld.items.craft: 'Du darfst &a$1&4 nicht herstellen.'
+modifyworld.items.enchant: 'Du darfst &a$1&4 nicht verzaubern.'
+modifyworld.items.pickup: 'Du darfst &a$1&4 nicht aufheben.'
+modifyworld.items.take: 'Du darfst &a$1&4 nicht aus diesem Behälter entnehmen.'
+modifyworld.items.put: 'Du darfst &a$1&4 nicht in diesen Behälter legen.'
+modifyworld.items.throw: 'Du darfst &a$1&4 nicht werfen.'
+modifyworld.items.allowunknownaction: 'Diese Inventaraktion ist für &a$1&4 nicht erlaubt.'
+modifyworld.vehicle.enter: 'Du darfst &a$1&4 nicht besteigen.'
+modifyworld.vehicle.destroy: 'Du darfst &a$1&4 nicht zerstören.'
+modifyworld.tame: 'Du darfst &a$1&4 nicht zähmen.'
+modifyworld.interact: 'Du darfst nicht mit &a$1&4 interagieren.'
+modifyworld.spawn: 'Du darfst &a$1&4 nicht spawnen.'
+modifyworld.bucket.fill: 'Du darfst &a$1&4 nicht mit einem Eimer aufnehmen.'
+modifyworld.bucket.empty: 'Du darfst hier keinen Eimer mit &a$1&4 leeren.'
+modifyworld.usebeds: 'Du darfst dieses Bett nicht benutzen.'

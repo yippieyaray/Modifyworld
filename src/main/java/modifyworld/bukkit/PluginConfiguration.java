@@ -40,6 +40,13 @@ final class PluginConfiguration {
         }
         candidate.setDefaults(defaults);
         candidate.options().copyDefaults(true);
+        // Explicit-fallback getters in Bukkit ignore configured defaults. Materialize
+        // scalar defaults in memory so every consumer sees the same effective values.
+        for (String key : defaults.getKeys(false)) {
+            if (!defaults.isConfigurationSection(key) && !candidate.contains(key, true)) {
+                candidate.set(key, defaults.get(key));
+            }
+        }
         validate(candidate);
         if (!exists) {
             Files.createDirectories(file.toPath().toAbsolutePath().getParent());
