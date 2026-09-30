@@ -7,11 +7,13 @@ Original project: https://github.com/PEXPlugins/Modifyworld
 Original source notices: Copyright (C) 2011 t3hk0d3 http://www.tehkode.ru
 Original authors and contributors retain their respective rights.
 Paper port: https://github.com/yippieyaray/Modifyworld
-Port modifications by Raymond (yippieyaray), 2026-09-28 through 2026-09-29.
+Port modifications by Raymond (yippieyaray), 2026-09-28 through 2026-09-30.
 
 Changes include the Java 25/Paper 26.2 build, neutral Java package namespace,
 Bukkit permission checks for LuckPerms, inventory/crafting/hazard handling,
 startup validation, configuration migration, localization, OP bypass and tests.
+On 2026-09-30, comments, plugin metadata and documentation were updated,
+and release notes were added to the versioned source distribution.
 This is an independent fork, not an official release by the original maintainers.
 
 PlayerInformer.java provenance:

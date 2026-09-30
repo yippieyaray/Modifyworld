@@ -3,6 +3,6 @@ main: modifyworld.bukkit.Modifyworld
 softdepend: [ LuckPerms ]
 version: "${project.version}"
 author: t3hk0d3
-website: www.bukkit.org
+website: https://github.com/yippieyaray/Modifyworld
 description: World modification permission ruleset
 api-version: '26.2'

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-09-30: clarify comments and current Paper plugin description.
 // Modified or added for the Paper port on 2026-09-28 and 2026-09-29; see NOTICE.
 // Modified on 2026-09-28: move to the neutral modifyworld namespace.
 /*
- * Modifyworld - PermissionsEx ruleset plugin for Bukkit
+ * Modifyworld - Permission rules for Paper
  * Copyright (C) 2011 t3hk0d3 http://www.tehkode.ru
  *
  * This program is free software; you can redistribute it and/or
@@ -47,7 +48,7 @@ public class EntityListener extends ModifyworldListener {
 			EntityDamageByEntityEvent edbe = (EntityDamageByEntityEvent) event;
 
 			Player player;
-			if (edbe.getDamager() instanceof Player) { // Prevent from damaging by player
+			if (edbe.getDamager() instanceof Player) { // Check direct player damage.
 				player = (Player) edbe.getDamager();
 				if (permissionDenied(player, "modifyworld.damage.deal", event.getEntity())) {
 					cancelDamageEvent(player, event);
@@ -56,14 +57,14 @@ public class EntityListener extends ModifyworldListener {
 
 			if (edbe.getEntity() instanceof Player) {
 				player = (Player) edbe.getEntity();
-				if (edbe.getDamager() != null && player.isOnline()) { // Prevent from taking damage by entity
+				if (edbe.getDamager() != null && player.isOnline()) { // Check damage received from an entity.
 					if (_permissionDenied(player, "modifyworld.damage.take", edbe.getDamager())) {
 						cancelDamageEvent(player, event);
 					}
 				}
 			}
 
-		} else if (event.getEntity() instanceof Player) { // player are been damaged by enviroment
+		} else if (event.getEntity() instanceof Player) { // Check environmental damage to players.
 			Player player = (Player) event.getEntity();
 
 			if (_permissionDenied(player, "modifyworld.damage.take",  event.getCause().name().toLowerCase(Locale.ROOT).replace("_", ""))) {

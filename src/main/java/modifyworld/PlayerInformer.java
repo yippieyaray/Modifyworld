@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-09-30: clarify comments and current Paper plugin description.
 // Modified or added for the Paper port on 2026-09-28 and 2026-09-29; see NOTICE.
 // Origin: t3hk0d3, upstream commit 46464c38 (2012-06-07); attribution added by this fork.
 // Modified on 2026-09-28: move to the neutral modifyworld namespace.
@@ -79,7 +80,7 @@ public class PlayerInformer {
 	}
 
 	public String getMessage(Player player, String permission) {
-		// Permission decisions remain with Bukkit; messages come from config.yml.
+		// Messages use the selected language file and bundled fallbacks.
 		return getMessage(permission);
 	}
 
@@ -139,9 +140,8 @@ public class PlayerInformer {
 		return material.toString().toLowerCase(Locale.ROOT).replace("_", " ");
 	}
 
-	// For backward compatibility
+	// Import supported message aliases into permission-based message keys.
 	private void importMessages(ConfigurationSection config) {
-		// This should NOT be refactored, because it would be stupid :D
 		if (config.isString("whitelistMessage")) {
 			setMessage("modifyworld.login", config.getString("whitelistMessage"));
 			config.set("whitelistMessage", null);

@@ -8,7 +8,7 @@ to **Paper 26.2, Java 25, and LuckPerms**. WorldGuard remains responsible for
 regions. Modifyworld adds permission checks and does not clear another plugin's
 event cancellation.
 
-> **Beta — 2.0.0-BETA.3**
+> **Beta — 2.0.0-BETA.4**
 
 ## Requirements and compatibility
 
@@ -281,8 +281,8 @@ by normal denial messages. The optional login rejection uses its own message
 without the normal message-format wrapper.
 
 PEX/Vault per-player or per-world denial-message metadata is no longer read.
-Move needed text into this configuration. The historical `individual-messages`
-option has no active effect in this port.
+Move needed text into the selected `lang/<language>.yml` file or `lang/own.yml`.
+The historical `individual-messages` option has no active effect in this port.
 
 ## Migrating old permissions
 
@@ -316,6 +316,8 @@ specification of what the server actually enforced.
   can affect event behavior. Test the actual server combination.
 - Startup failure leaves Modifyworld disabled, not a server-wide lockdown.
 
+Release details and validation results are in [RELEASE-NOTES.md](RELEASE-NOTES.md).
+
 ## Build and validation
 
 Use JDK 25 and Maven (development testing used Maven 3.9.11):
@@ -326,26 +328,12 @@ mvn -version
 mvn clean verify
 ```
 
-Expected artifacts are `target/Modifyworld.jar` and `target/Modifyworld-bin.zip`.
+Expected artifacts are `target/Modifyworld.jar` and `target/Modifyworld-2.0.0-BETA.4.zip`.
 The first build downloads the Paper API and build/test dependencies. The API is
 provided by the server and is not bundled into the plugin.
 
 Build validation uses automated tests with mocked server services and selected
 real event classes. Run `mvn verify` to execute them and package the beta.
-
-### Before the first production release
-
-- [ ] Complete and inspect a clean packaged build, including filtered `plugin.yml`.
-- [x] Include license text, provenance notices, and corresponding project source in the distribution.
-- [ ] Start an isolated Paper 26.2 server with LuckPerms and WorldGuard; record exact versions.
-- [ ] Verify group/world rules with non-OP players, world changes, wildcards, and explicit denials.
-- [ ] Test both hands: TNT placement/ignition, fire charges, creeper ignition, lava sources and cauldrons.
-- [ ] Test normal/shift crafting, hotbar/offhand/drop output extraction, and custom results.
-- [ ] Test chest/barrel/shulker/workbench transfers, dragging, double-click, swaps, and bundles.
-- [ ] Confirm WorldGuard denials remain effective when Modifyworld grants access, and vice versa.
-- [ ] Test Minecraft whitelist independently of the optional `modifyworld.login` requirement.
-- [ ] Verify malformed configuration and startup failures clearly leave the plugin disabled.
-- [ ] Review remaining creative, command-driven, and automation paths against the intended server policy.
 
 ## Credits and license
 
@@ -359,7 +347,7 @@ license text, attribution, modification summary and source provenance.
 Original copyright notices are retained. The software comes without warranty.
 
 `Modifyworld.jar` includes LICENSE and NOTICE under `META-INF/`.
-`Modifyworld-bin.zip` includes the JAR, documentation, license and the complete
+`Modifyworld-2.0.0-BETA.4.zip` includes the JAR, documentation, license and the complete
 corresponding project source under `source/`, including tests and Maven build files.
 Publish this ZIP alongside the standalone JAR and use a release tag matching the
 source used for the build. Private server configurations are not included.

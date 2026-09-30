@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-09-30: clarify comments and current Paper plugin description.
 // Modified or added for the Paper port on 2026-09-28 and 2026-09-29; see NOTICE.
 // Modified on 2026-09-28: registration is owned by plugin startup, after construction.
 // Modified on 2026-09-28: move to the neutral modifyworld namespace.
 /*
- * Modifyworld - PermissionsEx ruleset plugin for Bukkit
+ * Modifyworld - Permission rules for Paper
  * Copyright (C) 2011 t3hk0d3 http://www.tehkode.ru
  *
  * This program is free software; you can redistribute it and/or
@@ -74,7 +75,7 @@ public abstract class ModifyworldListener implements Listener {
 		EntityCategory category = EntityCategory.fromEntity(entity);
 
 		if (category == null) {
-			return entityName; // category unknown (ender crystal)
+			return entityName; // Use the unprefixed type when no category matches.
 		}
 
 		return category.getNameDot() + entityName;
