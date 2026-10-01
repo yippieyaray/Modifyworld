@@ -1,4 +1,6 @@
-# Modifyworld for Paper
+# Modifyworld-Reloaded
+
+An unofficial community port of Modifyworld for Paper.
 
 Control what players can build, use, pick up, craft, and transfer through
 inventories, with permissions that can vary by group and world.
@@ -357,6 +359,10 @@ loading is disabled. The agent uses the configured local Maven repository and
 the same Mockito version as the test dependency. No runtime attachment is needed.
 Run tests through Maven to apply this configuration; IDE-native test runners need
 the equivalent JVM agent option. Mockito remains test-only and is not in the plugin JAR.
+
+## Links
+
+Available on [Hangar](https://hangar.papermc.io/Yippie/Modifyworld-Reloaded).
 
 ## Credits and license
 
