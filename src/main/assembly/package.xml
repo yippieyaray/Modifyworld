@@ -21,6 +21,7 @@
             <outputDirectory>source</outputDirectory>
             <includes>
                 <include>pom.xml</include>
+                <include>build.sh</include>
                 <include>README.md</include>
                 <include>RELEASE-NOTES.md</include>
                 <include>LICENSE</include>

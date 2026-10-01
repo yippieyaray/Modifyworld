@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-09-30: support and validate Brazilian Portuguese, Polish and Turkish.
 // Modified or added for the Paper port on 2026-09-28 and 2026-09-29; see NOTICE.
 // Licensed under GPL-2.0-or-later.
 package modifyworld.bukkit;
@@ -14,7 +15,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 /** Installs editable language files without replacing existing files. */
 final class LanguageFiles {
-    static final java.util.List<String> LANGUAGES = java.util.List.of("en", "de", "es", "fr");
+    static final java.util.List<String> LANGUAGES = java.util.List.of("en", "de", "es", "fr", "pt_br", "pl", "tr");
 
     private LanguageFiles() { }
 

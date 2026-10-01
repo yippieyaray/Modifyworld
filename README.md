@@ -211,7 +211,7 @@ The full default file is [config.yml](src/main/resources/config.yml).
 | `item-restrictions` | `false` | Scan inventory on monitored interactions, pickup/drop, and held-slot changes; remove items denied by `items.have` |
 | `drop-restricted-item` | `false` | During those inventory scans, drop removed items in the world instead of deleting them |
 | `op-bypass` | `false` | Operators bypass all Modifyworld permission checks, including explicit denials; other plugins and Minecraft admission checks remain effective |
-| `language` | `en` | Server message language: `en`, `de`, `es`, `fr`, or `own` |
+| `language` | `en` | Server message language: `en`, `de`, `es`, `fr`, `pt_br`, `pl`, `tr`, or `own` |
 | `require-login-permission` | `false` | Require `modifyworld.login` in addition to Minecraft's admission checks |
 
 `item-restrictions` is an event-driven scan, not continuous monitoring. A denial
@@ -238,8 +238,11 @@ permissions stored in LuckPerms; those must be migrated separately.
 ### Messages
 
 Missing bundled language files are copied into the plugin folder at startup:
-`lang/en.yml`, `lang/de.yml`, `lang/es.yml`, and `lang/fr.yml`.
-Select `language: en` (English), `de` (German), `es` (Spanish), or `fr` (French).
+`lang/en.yml`, `lang/de.yml`, `lang/es.yml`, `lang/fr.yml`, `lang/pt_br.yml`,
+`lang/pl.yml`, and `lang/tr.yml`.
+Select `language: en` (English), `de` (German), `es` (Spanish), `fr` (French),
+`pt_br` (Brazilian Portuguese), `pl` (Polish), or `tr` (Turkish).
+The selected language applies server-wide, not per player.
 Restart after changes. Existing language files are never overwritten.
 Missing keys fall back to the bundled selected language, then bundled English,
 without rewriting your files. Invalid selected language files stop startup.
@@ -273,7 +276,7 @@ the inventory type. Permission names are unaffected by message formatting.
 Existing language files are preserved on upgrades: to adopt the revised Beta 2
 texts, back up and remove the old language files while the server is stopped.
 The next startup recreates them. With `language: own`, those files do not replace
-your custom messages; edit `own.yml` or explicitly select `en`, `de`, `es`, or `fr`.
+your custom messages; edit `own.yml` or explicitly select one of the bundled languages.
 
 Use `%s` in `message-format`, `$permission` for the checked permission, and
 `$1`, `$2`, etc. for action arguments where available. `&` color codes are supported
@@ -328,12 +331,32 @@ mvn -version
 mvn clean verify
 ```
 
+For persistent user-local tools, `./build.sh` runs the same clean build and prints
+Java/Maven versions first. Its defaults are JDK 25.0.4.1+1 (macOS bundle) and
+Maven 3.9.11 under `~/.local/share/minecraft-devtools/`. Set
+`MODIFYWORLD_JAVA_HOME` and `MODIFYWORLD_MAVEN_HOME` to use other installation
+paths, including non-macOS JDK layouts. `MODIFYWORLD_TOOLS_DIR` overrides the
+common tools directory, shared with other Minecraft plugin projects. Setup and
+troubleshooting details are included in `build.sh`. The script does not download tools or change shell settings;
+missing tools produce an error. Maven normally caches dependencies in
+`~/.m2/repository/`, outside temporary storage.
+
+With dependencies already cached, run `./build.sh -B -o clean verify` offline.
+Explicit arguments replace the default `-B clean verify` arguments. The script
+sets Java only for its own process and Maven children. A sandbox still needs write
+permission to the Maven cache when dependencies must be downloaded.
+
 Expected artifacts are `target/Modifyworld.jar` and `target/Modifyworld-2.0.0-BETA.4.zip`.
 The first build downloads the Paper API and build/test dependencies. The API is
 provided by the server and is not bundled into the plugin.
 
 Build validation uses automated tests with mocked server services and selected
 real event classes. Run `mvn verify` to execute them and package the beta.
+Surefire loads Mockito as a Java agent when the test JVM starts; dynamic agent
+loading is disabled. The agent uses the configured local Maven repository and
+the same Mockito version as the test dependency. No runtime attachment is needed.
+Run tests through Maven to apply this configuration; IDE-native test runners need
+the equivalent JVM agent option. Mockito remains test-only and is not in the plugin JAR.
 
 ## Credits and license
 

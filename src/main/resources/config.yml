@@ -11,7 +11,7 @@ require-login-permission: false
 
 # Allow operators to bypass Modifyworld checks only.
 op-bypass: false
-# Server message language: en, de, es, fr or own. Restart after changing.
+# Server message language: en, de, es, fr, pt_br, pl, tr or own. Restart after changing.
 language: en
 # Legacy message overrides are migrated to lang/own.yml with a config backup.
 messages: {}

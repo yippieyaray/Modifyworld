@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-09-30: support and validate Brazilian Portuguese, Polish and Turkish.
 // Modified or added for the Paper port on 2026-09-28 and 2026-09-29; see NOTICE.
 // Added on 2026-09-28. Licensed under GPL-2.0-or-later.
 package modifyworld.bukkit;
@@ -119,7 +120,7 @@ final class PluginConfiguration {
             if (!config.isBoolean(key)) throw new InvalidConfigurationException(key + " must be a boolean");
         }
         if (!config.isString("language") || !(LanguageFiles.LANGUAGES.contains(config.getString("language")) || "own".equals(config.getString("language")))) {
-            throw new InvalidConfigurationException("language must be en, de, es, fr or own");
+            throw new InvalidConfigurationException("language must be " + String.join(", ", LanguageFiles.LANGUAGES) + " or own");
         }
         ConfigurationSection messages = config.getConfigurationSection("messages");
         if (messages == null) throw new InvalidConfigurationException("messages must be a mapping");

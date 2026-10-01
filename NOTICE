@@ -7,13 +7,16 @@ Original project: https://github.com/PEXPlugins/Modifyworld
 Original source notices: Copyright (C) 2011 t3hk0d3 http://www.tehkode.ru
 Original authors and contributors retain their respective rights.
 Paper port: https://github.com/yippieyaray/Modifyworld
-Port modifications by Raymond (yippieyaray), 2026-09-28 through 2026-09-30.
+Port modifications by Raymond (yippieyaray), 2026-09-28 through 2026-10-01.
 
 Changes include the Java 25/Paper 26.2 build, neutral Java package namespace,
 Bukkit permission checks for LuckPerms, inventory/crafting/hazard handling,
 startup validation, configuration migration, localization, OP bypass and tests.
 On 2026-09-30, comments, plugin metadata and documentation were updated,
-and release notes were added to the versioned source distribution.
+release notes were added to the versioned source distribution, and Brazilian
+Portuguese, Polish and Turkish messages and language regression tests were added.
+The Maven test setup now loads Mockito as a startup Java agent without self-attachment.
+A build script selects persistent user-local tools without changing system Java settings.
 This is an independent fork, not an official release by the original maintainers.
 
 PlayerInformer.java provenance:
@@ -37,3 +40,6 @@ with the exact source used to build the published JAR.
 
 This program is distributed WITHOUT ANY WARRANTY; without even the implied
 warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See LICENSE.
+
+On 2026-10-01, the build script and documentation were updated to use the shared
+minecraft-devtools directory and explain setup, overrides and verification.

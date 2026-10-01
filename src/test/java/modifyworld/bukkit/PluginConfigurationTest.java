@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-09-30: support and validate Brazilian Portuguese, Polish and Turkish.
 // Modified or added for the Paper port on 2026-09-28 and 2026-09-29; see NOTICE.
 package modifyworld.bukkit;
 
@@ -22,7 +23,7 @@ class PluginConfigurationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"es", "fr"})
+    @ValueSource(strings = {"es", "fr", "pt_br", "pl", "tr"})
     void additionalLanguagesAreInstalledCompleteAndMigrated(String language) throws Exception {
         Path file = directory.resolve("config.yml");
         Files.writeString(file, "language: " + language + "\n");
@@ -43,7 +44,70 @@ class PluginConfigurationTest {
         Files.writeString(file, "language: " + language + "\nmessages:\n  modifyworld.chat: Custom\n");
         config = PluginConfiguration.load(file.toFile(), defaults());
         assertEquals("own", config.getString("language"));
+        assertEquals("Custom", config.getString("messages/modifyworld.chat"));
         assertEquals(selected.getString("modifyworld.items.take"), config.getString("messages/modifyworld.items.take"));
+        String migrated = Files.readString(file);
+        String own = Files.readString(directory.resolve("lang/own.yml"));
+        PluginConfiguration.load(file.toFile(), defaults());
+        assertEquals(migrated, Files.readString(file));
+        assertEquals(own, Files.readString(directory.resolve("lang/own.yml")));
+        assertFalse(Files.exists(directory.resolve("config.yml.bak.2")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"pt_br", "pl", "tr"})
+    void newLanguageOverridesAndFallbacksSurviveRepeatedStartup(String language) throws Exception {
+        Path file = directory.resolve("config.yml");
+        Files.writeString(file, "language: " + language + "\n");
+        var initial = PluginConfiguration.load(file.toFile(), defaults());
+        String fallback = initial.getString("messages/modifyworld.items.take");
+        Path selected = directory.resolve("lang/" + language + ".yml");
+        String custom = "# Keep my text\nmodifyworld.chat: 'Custom ç ą ã $permission'\n";
+        Files.writeString(selected, custom);
+        String migrated = Files.readString(file);
+        for (int startup = 0; startup < 2; startup++) {
+            var config = PluginConfiguration.load(file.toFile(), defaults());
+            assertEquals("Custom ç ą ã $permission", config.getString("messages/modifyworld.chat"));
+            assertEquals(fallback, config.getString("messages/modifyworld.items.take"));
+            assertEquals(custom, Files.readString(selected));
+            assertEquals(migrated, Files.readString(file));
+        }
+        assertEquals("language: " + language + "\n", Files.readString(directory.resolve("config.yml.bak")));
+        assertFalse(Files.exists(directory.resolve("config.yml.bak.1")));
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({
+        "pt_br, Você não pode retirar §atnt§4 deste recipiente.",
+        "pl, Nie możesz wyjmować §atnt§4 z tego pojemnika.",
+        "tr, Bu kaptan §atnt§4 alamazsınız."
+    })
+    void newLanguageMessageReachesPlayer(String language, String expected) throws Exception {
+        Path file = directory.resolve("config.yml");
+        Files.writeString(file, "language: " + language + "\n");
+        var config = PluginConfiguration.load(file.toFile(), defaults());
+        var player = org.mockito.Mockito.mock(org.bukkit.entity.Player.class);
+        var informer = new modifyworld.PlayerInformer(config);
+        informer.informPlayer(player, "modifyworld.items.take.tnt.of.chest",
+                org.bukkit.Material.TNT, "of", "chest");
+        org.mockito.Mockito.verify(player).sendMessage("§f[§2Modifyworld§f]§4 " + expected);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"pt_br", "pl", "tr"})
+    void malformedNewLanguagePreservesConfigurationAndLanguageFile(String language) throws Exception {
+        Path file = directory.resolve("config.yml");
+        String original = "language: " + language + "\n";
+        Files.writeString(file, original);
+        Files.createDirectories(directory.resolve("lang"));
+        Path selected = directory.resolve("lang/" + language + ".yml");
+        String malformed = "modifyworld.chat: [invalid]\n";
+        Files.writeString(selected, malformed);
+        assertThrows(InvalidConfigurationException.class,
+                () -> PluginConfiguration.load(file.toFile(), defaults()));
+        assertEquals(original, Files.readString(file));
+        assertEquals(malformed, Files.readString(selected));
+        assertFalse(Files.exists(directory.resolve("config.yml.bak")));
     }
 
     @ParameterizedTest
