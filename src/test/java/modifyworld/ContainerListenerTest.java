@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-10-05: preserve the unknown-action policy for OPs.
 // Modified or added for the Paper port on 2026-09-28 and 2026-09-29; see NOTICE.
 package modifyworld;
 
@@ -247,8 +248,10 @@ class ContainerListenerTest {
         verify(event, never()).setCancelled(anyBoolean());
     }
 
-    @Test
-    void unknownActionDefaultsToAllowedEvenWithoutNormalPermissions() {
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    void unknownActionDefaultsToAllowedEvenWithoutNormalPermissions(boolean operator) {
+        when(player.isOp()).thenReturn(operator);
         InventoryClickEvent event = click(InventoryAction.UNKNOWN, 0);
         when(event.getCurrentItem()).thenReturn(tnt);
         when(player.hasPermission(anyString())).thenReturn(false);
@@ -280,8 +283,10 @@ class ContainerListenerTest {
         verify(event).setCancelled(true);
     }
 
-    @Test
-    void unknownActionExplicitAllowAndContextChangesAreRechecked() {
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    void unknownActionExplicitAllowAndContextChangesAreRechecked(boolean operator) {
+        when(player.isOp()).thenReturn(operator);
         String permission = "modifyworld.items.allowunknownaction.tnt";
         when(player.isPermissionSet(permission)).thenReturn(true);
         when(player.hasPermission(permission)).thenReturn(true, false);

@@ -6,3 +6,12 @@ author: t3hk0d3
 website: https://github.com/yippieyaray/Modifyworld
 description: World modification permission ruleset
 api-version: '26.2'
+commands:
+  modifyworld:
+    description: Explain a Modifyworld permission decision for an online player
+    usage: /modifyworld check [player] <permission>
+    permission: modifyworld.command.check
+permissions:
+  modifyworld.command.check:
+    description: Use Modifyworld permission diagnostics for yourself or other online players
+    default: op

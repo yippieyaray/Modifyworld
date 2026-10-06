@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-10-05: share unknown-action policy with permission diagnostics.
 // Modified or added for the Paper port on 2026-09-28 and 2026-09-29; see NOTICE.
 // Added on 2026-09-28. Licensed under GPL-2.0-or-later.
 package modifyworld.handlers;
@@ -106,11 +107,7 @@ public class ContainerListener extends ModifyworldListener {
 
     private boolean unknownItemDenied(Player player, ItemStack item) {
         if (!present(item)) return false;
-        String permission = assemblePermission("modifyworld.items.allowunknownaction", item);
-        // Unset means allowed, including for non-OP players. LuckPerms resolves
-        // explicit, inherited, contextual and wildcard assignments through Bukkit.
-        return player.isPermissionSet(permission)
-                && permissionDenied(player, "modifyworld.items.allowunknownaction", item);
+        return permissionDenied(player, "modifyworld.items.allowunknownaction", item);
     }
 
     private boolean unknownActionDenied(Player player, InventoryClickEvent event) {

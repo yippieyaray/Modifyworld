@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-10-05: exclude implicit OP grants when bypass is disabled.
 // Modified on 2026-09-30: clarify comments and current Paper plugin description.
 // Modified or added for the Paper port on 2026-09-28 and 2026-09-29; see NOTICE.
 // Modified on 2026-09-28: registration is owned by plugin startup, after construction.
@@ -109,8 +110,8 @@ public abstract class ModifyworldListener implements Listener {
 	}
 
 	protected boolean _permissionDenied(Player player, String permission, Object... arguments) {
-		return !(config.getBoolean("op-bypass", false) && player.isOp())
-                && !player.hasPermission(assemblePermission(permission, arguments));
+        return !PermissionDecision.evaluate(player, assemblePermission(permission, arguments),
+                config.getBoolean("op-bypass", false)).allowed();
 	}
 
 	protected String assemblePermission(String permission, Object... arguments) {

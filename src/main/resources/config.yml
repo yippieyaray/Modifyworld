@@ -9,7 +9,8 @@ drop-restricted-item: false
 # Legacy alias: whitelist. An explicitly set require-login-permission takes precedence.
 require-login-permission: false
 
-# Allow operators to bypass Modifyworld checks only.
+# Allow operators to bypass Modifyworld checks, including explicit denials.
+# With false, OPs need an effective permission assignment; OP fallback alone is ignored.
 op-bypass: false
 # Server message language: en, de, es, fr, pt_br, pl, tr or own. Restart after changing.
 language: en

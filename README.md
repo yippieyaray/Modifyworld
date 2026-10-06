@@ -10,7 +10,7 @@ to **Paper 26.2, Java 25, and LuckPerms**. WorldGuard remains responsible for
 regions. Modifyworld adds permission checks and does not clear another plugin's
 event cancellation.
 
-> **Beta — 2.0.0-BETA.4**
+> **Beta — 2.0.0-BETA.5**
 
 ## Requirements and compatibility
 
@@ -20,7 +20,7 @@ event cancellation.
 | Server | Developed and tested against Paper for Minecraft 26.2 |
 | Newer Paper versions | May work but have not yet been verified |
 | Java | Java 25 |
-| Compile-time Paper API | `26.2.build.129-stable`, pinned in [pom.xml](pom.xml) |
+| Compile-time Paper API | `26.2.build.130-stable`, pinned in [pom.xml](pom.xml) |
 | Permissions | LuckPerms is the intended provider; Modifyworld uses Bukkit permission checks |
 | Regions | Optional WorldGuard installation with its required dependencies |
 | PermissionsEx / Vault | Neither is required or used |
@@ -47,7 +47,7 @@ for the Paper dependency and Java version conventions.
 6. Restart and test with a **non-OP** account in every relevant world. Use
    LuckPerms verbose output to confirm which permissions are being checked.
 
-Modifyworld has no administration commands or live configuration reload.
+Modifyworld provides a permission diagnostic command, but no live configuration reload.
 Restart after changing its configuration. LuckPerms permission changes are
 evaluated on subsequent checks without a Modifyworld-specific permission cache.
 
@@ -68,6 +68,15 @@ Use `world=<world-name>` to scope LuckPerms rules to a world. Use the actual wor
 name/context reported by your server, not a display alias. See
 [LuckPerms contexts](https://luckperms.net/wiki/Context) and
 [permission precedence](https://luckperms.net/wiki/Advanced-Setup).
+
+With `op-bypass: false`, operators need an effective permission assignment for
+normal actions. Modifyworld checks Bukkit `isPermissionSet` before accepting an
+OP's `hasPermission` result. LuckPerms resolves assignments from users, groups,
+wildcards and contexts, but excludes its implicit OP fallback from `isPermissionSet`.
+With `op-bypass: true`, OPs bypass these checks, including explicit denials.
+Neither setting clears WorldGuard cancellations or Minecraft admission checks.
+The unknown-inventory-action exception below still defaults to allowed.
+Other permission providers must implement Bukkit's assignment checks correctly.
 
 ### Naming conventions
 
@@ -137,10 +146,12 @@ item. A future action could affect additional items not exposed by these fields.
 This policy is therefore not a guarantee against every future transfer mechanism.
 It never bypasses the normal rules for known actions.
 
-### Other retained permissions
+### Other permissions
 
 | Permission | Meaning |
 | --- | --- |
+| `modifyworld.command.*` | LuckPerms wildcard covering all Modifyworld command permissions |
+| `modifyworld.command.check` | Use `/modifyworld check` for yourself or other online players; granted to OPs by default, independently of `op-bypass` |
 | `modifyworld.login` | Additional admission check, only with `require-login-permission: true` |
 | `modifyworld.chat` | Send chat messages |
 | `modifyworld.chat.private` | Legacy command filter for messages starting with `/tell`; not a complete private-message filter |
@@ -168,6 +179,9 @@ Renamed modern entity types can change old permission suffixes; inspect verbose
 output rather than assuming an old boat or minecart name still matches.
 
 ## LuckPerms example
+
+For a compact Admin / VIP / Player / Default setup across two worlds, see
+[the four-rank example](examples/luckperms-worlds.md).
 
 The following console commands create a **test group** with broad Modifyworld
 access in the world `build`, then restrict lava, TNT, and ignition tools there.
@@ -202,6 +216,93 @@ Verify the effective result if the player also inherits other groups or explicit
 user permissions. A placement denial does not itself deny ignition of existing
 TNT; item-use permissions address direct ignition tools.
 
+## Permission diagnostics
+
+### Syntax
+
+In-game, check your own permissions:
+
+```text
+/modifyworld check modifyworld.<permission>
+```
+
+From the server console, specify an online player:
+
+```text
+modifyworld check <PlayerName> modifyworld.<permission>
+```
+
+The named-player form also works in-game with a leading `/`. Replace
+`<PlayerName>` with the player's name and `<permission>` with an action suffix
+such as `blocks.place.tnt`, without the angle brackets. Use concrete action
+permissions, without wildcards. The target must be online; the check uses their
+current world and permission context.
+
+### Command access
+
+Both forms require `modifyworld.command.check` (granted to OPs by default);
+the server console can always use them. This command permission is independent
+of `op-bypass` and permits checks for yourself and other online players.
+A matching `modifyworld.command.*` or `modifyworld.*` grant also includes it.
+
+To grant command access globally to the Player group, run in the server console:
+
+```text
+lp group player permission set modifyworld.command.check true
+```
+
+See the [world permission example](examples/luckperms-worlds.md#player).
+
+### Examples
+
+In-game, check whether Modifyworld permissions allow you to place TNT:
+
+```text
+/modifyworld check modifyworld.blocks.place.tnt
+```
+
+From the console, check the same permission for an online player named Alex:
+
+```text
+modifyworld check Alex modifyworld.blocks.place.tnt
+```
+
+### Understanding the result
+
+For example, a non-OP player with a permission grant sees:
+
+```text
+[Modifyworld] Permission check
+Player: Alex
+Player is OP: false
+World: survival
+Permission: modifyworld.blocks.place.tnt
+Modifyworld OP bypass: false
+Bukkit permission result: true
+Permission explicitly assigned or inherited: yes
+Reason: The effective Bukkit permission check allows this action.
+Action: ALLOWED
+Note: This checks Modifyworld permissions only. Other rules or plugins may still block the action.
+```
+
+| Field | Meaning |
+| --- | --- |
+| `Player` / `Player is OP` | The checked player and their operator status. |
+| `World` | The checked player's current world. |
+| `Permission` | The exact action permission being checked. |
+| `Modifyworld OP bypass` | The plugin's `op-bypass` setting. It bypasses Modifyworld permission checks only when enabled and the checked player is OP. |
+| `Bukkit permission result` | The raw Bukkit permission result, which may include an implicit OP grant. |
+| `Permission explicitly assigned or inherited` | Whether Bukkit reports an effective assignment, for example directly, through a group or through a wildcard. `yes` may represent either a grant or a denial; it does not mean allowed. |
+| `Reason` | Why Modifyworld allows or denies this permission check. |
+| `Action` | Modifyworld's permission decision: `ALLOWED` or `DENIED`. |
+| `Note` | A reminder that permission checks alone cannot determine whether the entire action will succeed. Configuration switches, event rules and other plugins still apply. |
+
+Labels are gray and values aqua. The action result is bold green for `ALLOWED`
+or bold red for `DENIED`; the explanatory note follows it in yellow.
+The command uses the same policy as the listeners, including the default-allow
+unknown-inventory-action exception. LuckPerms' own check command still shows
+its native result, which may include an OP fallback rejected by Modifyworld.
+
 ## Configuration
 
 The full default file is [config.yml](src/main/resources/config.yml).
@@ -212,7 +313,7 @@ The full default file is [config.yml](src/main/resources/config.yml).
 | `inform-players` | `true` | Send configured denial messages; deliberately silent checks such as pickup remain silent |
 | `item-restrictions` | `false` | Scan inventory on monitored interactions, pickup/drop, and held-slot changes; remove items denied by `items.have` |
 | `drop-restricted-item` | `false` | During those inventory scans, drop removed items in the world instead of deleting them |
-| `op-bypass` | `false` | Operators bypass all Modifyworld permission checks, including explicit denials; other plugins and Minecraft admission checks remain effective |
+| `op-bypass` | `false` | When true, operators bypass Modifyworld checks including explicit denials; when false, OP fallback alone grants no access |
 | `language` | `en` | Server message language: `en`, `de`, `es`, `fr`, `pt_br`, `pl`, `tr`, or `own` |
 | `require-login-permission` | `false` | Require `modifyworld.login` in addition to Minecraft's admission checks |
 
@@ -321,6 +422,24 @@ specification of what the server actually enforced.
   can affect event behavior. Test the actual server combination.
 - Startup failure leaves Modifyworld disabled, not a server-wide lockdown.
 
+## Operational safety and backups
+
+Modifyworld adds permission checks for supported player actions. It does not
+guarantee protection against every form of world modification, plugin conflict,
+configuration mistake or software defect.
+
+Before using a new version on a production server, test your permissions,
+world contexts and plugin combination on a separate test server. Keep regular
+backups of worlds, configurations and permissions, and verify that they can
+be restored.
+
+A stable release does not mean that the software is free of defects.
+Automated tests cover selected behavior and do not replace testing your
+specific server setup.
+
+The software is provided under GPL-2.0-or-later. Warranty disclaimers and
+limitations of liability are set out in LICENSE, subject to applicable law.
+
 Release details and validation results are in [RELEASE-NOTES.md](RELEASE-NOTES.md).
 
 ## Build and validation
@@ -348,7 +467,7 @@ Explicit arguments replace the default `-B clean verify` arguments. The script
 sets Java only for its own process and Maven children. A sandbox still needs write
 permission to the Maven cache when dependencies must be downloaded.
 
-Expected artifacts are `target/Modifyworld.jar` and `target/Modifyworld-2.0.0-BETA.4.zip`.
+Expected artifacts are `target/Modifyworld.jar` and `target/Modifyworld-2.0.0-BETA.5.zip`.
 The first build downloads the Paper API and build/test dependencies. The API is
 provided by the server and is not bundled into the plugin.
 
@@ -376,7 +495,7 @@ license text, attribution, modification summary and source provenance.
 Original copyright notices are retained. The software comes without warranty.
 
 `Modifyworld.jar` includes LICENSE and NOTICE under `META-INF/`.
-`Modifyworld-2.0.0-BETA.4.zip` includes the JAR, documentation, license and the complete
+`Modifyworld-2.0.0-BETA.5.zip` includes the JAR, documentation, license and the complete
 corresponding project source under `source/`, including tests and Maven build files.
 Publish this ZIP alongside the standalone JAR and use a release tag matching the
 source used for the build. Private server configurations are not included.

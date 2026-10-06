@@ -7,7 +7,7 @@ Original project: https://github.com/PEXPlugins/Modifyworld
 Original source notices: Copyright (C) 2011 t3hk0d3 http://www.tehkode.ru
 Original authors and contributors retain their respective rights.
 Paper port: https://github.com/yippieyaray/Modifyworld
-Port modifications by Raymond (yippieyaray), 2026-09-28 through 2026-10-01.
+Port modifications by Raymond (yippieyaray), 2026-09-28 through 2026-10-06.
 
 Changes include the Java 25/Paper 26.2 build, neutral Java package namespace,
 Bukkit permission checks for LuckPerms, inventory/crafting/hazard handling,
@@ -43,3 +43,13 @@ warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See LICENSE.
 
 On 2026-10-01, the build script and documentation were updated to use the shared
 minecraft-devtools directory and explain setup, overrides and verification.
+
+A compact four-rank LuckPerms example and its distribution entries were added
+on 2026-10-05.
+On 2026-10-05, normal permission checks were updated to exclude implicit OP
+grants when op-bypass is false, with regression tests and upgrade guidance.
+On 2026-10-05, an administrative permission diagnostic command was added,
+sharing the action permission policy and covering console and player usage.
+On 2026-10-06, diagnostic command labels, colors, help and command permissions
+were refined, and the diagnostic command tests were updated.
+On 2026-10-06, the pinned Paper API was updated to 26.2.build.130-stable.

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-10-05: expose the permission diagnostic command.
 // Modified on 2026-09-30: clarify comments and current Paper plugin description.
 // Modified or added for the Paper port on 2026-09-28 and 2026-09-29; see NOTICE.
 // Modified on 2026-09-28: validate configuration and make listener startup transactional.
@@ -40,6 +41,12 @@ public class Modifyworld extends JavaPlugin {
     protected List<ModifyworldListener> listeners = List.of();
     protected PlayerInformer informer;
     protected FileConfiguration config;
+
+    @Override
+    public boolean onCommand(org.bukkit.command.CommandSender sender, org.bukkit.command.Command command,
+            String label, String[] args) {
+        return new PermissionCheckCommand().execute(sender, args, getConfig());
+    }
 
     @Override
     public void onEnable() {

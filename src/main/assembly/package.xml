@@ -14,6 +14,7 @@
                 <include>NOTICE</include>
                 <include>README*</include>
                 <include>RELEASE-NOTES.md</include>
+                <include>examples/**</include>
             </includes>
         </fileSet>
         <fileSet>
@@ -24,6 +25,7 @@
                 <include>build.sh</include>
                 <include>README.md</include>
                 <include>RELEASE-NOTES.md</include>
+                <include>examples/**</include>
                 <include>LICENSE</include>
                 <include>NOTICE</include>
                 <include>src/**</include>
