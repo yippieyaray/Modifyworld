@@ -10,7 +10,7 @@ to **Paper 26.2, Java 25, and LuckPerms**. WorldGuard remains responsible for
 regions. Modifyworld adds permission checks and does not clear another plugin's
 event cancellation.
 
-> **Beta — 2.0.0-BETA.5**
+> **Beta — 2.0.0-BETA.6**
 
 ## Requirements and compatibility
 
@@ -53,8 +53,8 @@ evaluated on subsequent checks without a Modifyworld-specific permission cache.
 
 An invalid configuration or listener startup failure disables Modifyworld and
 logs that protection is **not active**. This does not shut down the Minecraft
-server. Existing configurations are migrated with a backup when options are missing
-or legacy messages are present; invalid configurations are not rewritten.
+server. Existing configurations below a migration's fixed version threshold are
+migrated with a backup; invalid configurations are not rewritten.
 
 ## How permissions work
 
@@ -297,8 +297,8 @@ Note: This checks Modifyworld permissions only. Other rules or plugins may still
 | `Action` | Modifyworld's permission decision: `ALLOWED` or `DENIED`. |
 | `Note` | A reminder that permission checks alone cannot determine whether the entire action will succeed. Configuration switches, event rules and other plugins still apply. |
 
-Labels are gray and values aqua. The action result is bold green for `ALLOWED`
-or bold red for `DENIED`; the explanatory note follows it in yellow.
+The action result is bold green for `ALLOWED` or bold red for `DENIED`.
+
 The command uses the same policy as the listeners, including the default-allow
 unknown-inventory-action exception. LuckPerms' own check command still shows
 its native result, which may include an OP fallback rejected by Modifyworld.
@@ -340,57 +340,70 @@ permissions stored in LuckPerms; those must be migrated separately.
 
 ### Messages
 
-Missing bundled language files are copied into the plugin folder at startup:
-`lang/en.yml`, `lang/de.yml`, `lang/es.yml`, `lang/fr.yml`, `lang/pt_br.yml`,
-`lang/pl.yml`, and `lang/tr.yml`.
-Select `language: en` (English), `de` (German), `es` (Spanish), `fr` (French),
-`pt_br` (Brazilian Portuguese), `pl` (Polish), or `tr` (Turkish).
-The selected language applies server-wide, not per player.
-Restart after changes. Existing language files are never overwritten.
-Missing keys fall back to the bundled selected language, then bundled English,
-without rewriting your files. Invalid selected language files stop startup.
-Material and entity names in placeholders remain English.
+Set `language` in `config.yml` to `en` (English), `de` (German), `es` (Spanish),
+`fr` (French), `pt_br` (Brazilian Portuguese), `pl` (Polish), or `tr` (Turkish).
+This applies server-wide to denial messages and `/modifyworld check`.
+Language files are created in `plugins/Modifyworld/lang/` at startup.
 
-Non-empty legacy `messages` sections are automatically migrated to `lang/own.yml`,
-and `language` is set to `own`. Missing messages are filled from the previously
-selected language (English when unspecified). The old section becomes `messages: {}`.
-Edit `lang/own.yml` directly after migration. Missing keys in an own file fall back
-to bundled English. Selecting `own` requires that the file exists.
-A conflicting existing `own.yml` stops startup without changing the configuration
-or that language file. Move or merge the conflicting file manually before retrying.
-An identical existing file can be reused after an interrupted migration.
-Repeated startup does not rewrite an already migrated configuration.
+For custom messages, copy a language file to `lang/own.yml` and set `language: own`.
+Edit that file directly, keep `messages: {}` in `config.yml`, and restart after
+changes. Missing entries fall back to the bundled selected language, then English;
+`own` uses English as its fallback. Modifyworld does not translate system-provided material or entity names.
 
-The following is an example of a legacy section that will be migrated:
+On upgrade, missing `check.*` entries are added without replacing existing texts.
+All configuration and language migrations share `config-version` in `config.yml`.
+Versions are parsed as `<major>.<minor>.<patch>[-BETA.<beta>]` and compared numerically;
+a final release sorts after every beta of the same version. The existing legacy
+and diagnostic migrations have a fixed threshold of `2.0.0-BETA.6`. A missing or
+older configuration version runs these migrations for all language files, including
+`own.yml`, and records the completed migration's target version after success. Equal or newer versions
+skip them, even when the plugin release changes; missing texts still use the
+in-memory fallback. Future migrations require their own fixed version thresholds
+and run in ascending order on the previous step's result, without repeating earlier
+steps. Each completed step is saved before the next starts. After a successful
+load, `config-version` advances to the running release, even if no migration was
+needed. Version-only updates create no backup and preserve other settings.
+Backups are created when migration changes configuration content. Downgrades keep
+a higher recorded version. Fresh configurations record the running release version.
+Leave the managed version unchanged.
+Migrations log their configuration/language work at INFO level and finish with
+`Configuration migration <from> -> <to> completed.` after successful validation
+and saving. Fresh installs and version-only updates do not emit migration messages.
+Each migration declares its affected standard languages: existing files receive
+missing diagnostic entries, while absent files are installed completely from the
+bundled resource. Diagnostic migration never creates `own.yml`; only migration of
+legacy custom `messages` may create it.
+Before changing a language file, its original is saved as `<language>.yml.bak`
+(then `.bak.1`, etc.). Legacy `messages` from `config.yml` migrate automatically
+to `lang/own.yml`, with the original configuration saved as `config.yml.bak`.
+A conflicting existing `own.yml` is preserved and must be merged manually.
+Invalid configuration or language data stops plugin startup; check the server log.
+
+Formatting rules:
+
+- Save files as UTF-8; umlauts and other accented characters are supported.
+- Use quoted YAML strings. Every `check.*` value must contain a single line;
+  the command fixes the report's order and colors.
+- Denial messages support `&` color codes. `%s` in `message-format` inserts the
+  message; this format also controls its prefix. Login rejection omits this wrapper.
+- `$1` represents the item, bucket contents or entity; `$3` represents the
+  interaction target or inventory type. `$permission` inserts the checked node.
+- Parent permission messages apply to child nodes unless a more specific message
+  exists; `default-message` is the final fallback.
+
+Example entries in `lang/own.yml`:
 
 ```yaml
-messages:
-  message-format: '&f[&2Modifyworld&f]&4 %s'
-  default-message: 'You do not have permission for this action.'
-  modifyworld.items.craft: 'You may not craft $1.'
-  modifyworld.bucket.empty: 'You may not empty this bucket.'
+message-format: '&f[&2Modifyworld&f]&4 %s'
+default-message: 'You do not have permission for this action.'
+modifyworld.items.put: 'You may not put &a$1&4 into this container.'
 ```
 
-Keys under `messages` are literal permission names. A message for a parent node
-also applies to its more specific children, with `default-message` as fallback.
-$1 describes the item for container transfers and the contents for bucket actions.
-For item interactions, $3 describes the target; for container transfers it describes
-the inventory type. Permission names are unaffected by message formatting.
-Existing language files are preserved on upgrades: to adopt the revised Beta 2
-texts, back up and remove the old language files while the server is stopped.
-The next startup recreates them. With `language: own`, those files do not replace
-your custom messages; edit `own.yml` or explicitly select one of the bundled languages.
+## Migrating permissions from legacy Modifyworld
 
-Use `%s` in `message-format`, `$permission` for the checked permission, and
-`$1`, `$2`, etc. for action arguments where available. `&` color codes are supported
-by normal denial messages. The optional login rejection uses its own message
-without the normal message-format wrapper.
-
-PEX/Vault per-player or per-world denial-message metadata is no longer read.
-Move needed text into the selected `lang/<language>.yml` file or `lang/own.yml`.
-The historical `individual-messages` option has no active effect in this port.
-
-## Migrating old permissions
+This section applies when moving from legacy Modifyworld (the PermissionsEx-era
+plugin) to this Paper port. Routine updates between this port's beta releases do not
+require the numeric-ID conversion described below.
 
 - Convert numeric IDs and metadata-specific entries to modern names. For example,
   old TNT `.46` entries become `.tnt`; flint-and-steel `.259` becomes
@@ -467,7 +480,7 @@ Explicit arguments replace the default `-B clean verify` arguments. The script
 sets Java only for its own process and Maven children. A sandbox still needs write
 permission to the Maven cache when dependencies must be downloaded.
 
-Expected artifacts are `target/Modifyworld.jar` and `target/Modifyworld-2.0.0-BETA.5.zip`.
+Expected artifacts are `target/Modifyworld.jar` and `target/Modifyworld-2.0.0-BETA.6.zip`.
 The first build downloads the Paper API and build/test dependencies. The API is
 provided by the server and is not bundled into the plugin.
 
@@ -495,7 +508,7 @@ license text, attribution, modification summary and source provenance.
 Original copyright notices are retained. The software comes without warranty.
 
 `Modifyworld.jar` includes LICENSE and NOTICE under `META-INF/`.
-`Modifyworld-2.0.0-BETA.5.zip` includes the JAR, documentation, license and the complete
+`Modifyworld-2.0.0-BETA.6.zip` includes the JAR, documentation, license and the complete
 corresponding project source under `source/`, including tests and Maven build files.
 Publish this ZIP alongside the standalone JAR and use a release tag matching the
 source used for the build. Private server configurations are not included.

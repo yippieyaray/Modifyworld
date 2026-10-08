@@ -1,3 +1,5 @@
+# Managed configuration version; migrations use fixed release thresholds.
+config-version: '${project.version}'
 # Modern material names only; legacy numeric IDs and metadata require migration.
 # Enable item-on-block/entity permission checks, including flint and steel.
 item-use-check: true

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-10-07: log migration context and successful completion.
 // Modified on 2026-10-05: expose the permission diagnostic command.
 // Modified on 2026-09-30: clarify comments and current Paper plugin description.
 // Modified or added for the Paper port on 2026-09-28 and 2026-09-29; see NOTICE.
@@ -108,7 +109,7 @@ public class Modifyworld extends JavaPlugin {
         }
         try {
             config = PluginConfiguration.load(new File(getDataFolder(), "config.yml"),
-                    getResource("config.yml"));
+                    getResource("config.yml"), getLogger()::info);
             String language = config.getString("language");
             getLogger().info("Language " + language + " (lang/" + language + ".yml loaded)");
         } catch (IOException | InvalidConfigurationException failure) {

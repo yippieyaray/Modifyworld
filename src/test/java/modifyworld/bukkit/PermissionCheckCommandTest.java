@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-10-07: cover translated layout, decision reasons and command errors.
 // Modified on 2026-10-06: verify diagnostic colors, final result order and online target setup.
 // Added on 2026-10-05: cover self/console diagnostics and permission policy.
 package modifyworld.bukkit;
@@ -142,4 +143,101 @@ class PermissionCheckCommandTest {
         command.execute(player, new String[] {"check", node}, config);
         verify(player).sendMessage("Specify a concrete Modifyworld action permission, without wildcards.");
     }
+    private void useLanguage(String language) throws Exception {
+        var yaml = LanguageFiles.bundled(language);
+        config.options().pathSeparator('/');
+        config.createSection("messages", yaml.getValues(false));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"en", "de", "es", "fr", "pt_br", "pl", "tr"})
+    void translatedDiagnosticsKeepElevenLinesOrderColorsAndRawValues(String language) throws Exception {
+        useLanguage(language);
+        String node = "modifyworld.blocks.place.tnt";
+        when(player.isOp()).thenReturn(true);
+        when(player.hasPermission(node)).thenReturn(true);
+        command.execute(player, new String[] {"check", node}, config);
+        var output = messages(player);
+        var plain = output.stream().map(PlainTextComponentSerializer.plainText()::serialize).toList();
+        var yaml = LanguageFiles.bundled(language);
+        assertEquals(java.util.List.of(
+                yaml.getString("check.title"),
+                yaml.getString("check.label.player") + "TestPlayer",
+                yaml.getString("check.label.op") + yaml.getString("check.value.true"),
+                yaml.getString("check.label.world") + "build",
+                yaml.getString("check.label.permission") + node,
+                yaml.getString("check.label.bypass") + yaml.getString("check.value.false"),
+                yaml.getString("check.label.bukkit-result") + yaml.getString("check.value.true"),
+                yaml.getString("check.label.assigned") + yaml.getString("check.value.no"),
+                yaml.getString("check.label.reason") + yaml.getString("check.reason.op-fallback"),
+                yaml.getString("check.label.action") + yaml.getString("check.value.denied"),
+                yaml.getString("check.note")), plain);
+        assertEquals(NamedTextColor.GOLD, output.getFirst().color());
+        for (int i = 1; i <= 8; i++) {
+            assertEquals(NamedTextColor.GRAY, output.get(i).color());
+            assertEquals(NamedTextColor.AQUA, output.get(i).children().getFirst().color());
+        }
+        assertEquals(NamedTextColor.GRAY, output.get(9).color());
+        assertEquals(NamedTextColor.RED, output.get(9).children().getFirst().color());
+        assertEquals(TextDecoration.State.TRUE, output.get(9).children().getFirst().decoration(TextDecoration.BOLD));
+        assertEquals(NamedTextColor.YELLOW, output.getLast().color());
+        verify(player, never()).setOp(anyBoolean());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "true,true,true,false,modifyworld.chat,bypass,allowed",
+        "false,false,false,false,modifyworld.items.allowunknownaction.tnt,unknown-default,allowed",
+        "true,false,false,true,modifyworld.chat,op-fallback,denied",
+        "false,false,true,true,modifyworld.chat,granted,allowed",
+        "false,false,true,false,modifyworld.chat,denied,denied"
+    })
+    void allDecisionReasonsAreLocalizedWithoutChangingPolicy(boolean op, boolean bypass,
+            boolean assigned, boolean granted, String node, String reason, String result) throws Exception {
+        useLanguage("de");
+        config.set("op-bypass", bypass);
+        when(player.isOp()).thenReturn(op);
+        when(player.isPermissionSet(node)).thenReturn(assigned);
+        when(player.hasPermission(node)).thenReturn(granted);
+        command.execute(player, new String[] {"check", node}, config);
+        var plain = messages(player).stream().map(PlainTextComponentSerializer.plainText()::serialize).toList();
+        var yaml = LanguageFiles.bundled("de");
+        assertEquals(yaml.getString("check.label.reason") + yaml.getString("check.reason." + reason), plain.get(8));
+        assertEquals(yaml.getString("check.label.action") + yaml.getString("check.value." + result), plain.get(9));
+    }
+
+    @Test
+    void localizedConsoleDiagnosticsAndErrorsUseServerLanguage() throws Exception {
+        useLanguage("de");
+        var console = mock(ConsoleCommandSender.class);
+        var server = mock(Server.class);
+        when(console.getServer()).thenReturn(server);
+        when(server.getPlayerExact("TestPlayer")).thenReturn(player);
+        command.execute(console, new String[] {"check", "TestPlayer", "modifyworld.chat"}, config);
+        assertEquals("Aktion: VERWEIGERT", PlainTextComponentSerializer.plainText().serialize(actionMessage(console)));
+        command.execute(console, new String[] {"check", "modifyworld.chat"}, config);
+        verify(console).sendMessage("Verwendung: /modifyworld check <permission> (im Spiel)");
+        verify(console).sendMessage("Verwendung: /modifyworld check <player> <permission> (Zielspieler online)");
+        command.execute(console, new String[] {"check", "Offline", "modifyworld.chat"}, config);
+        verify(console).sendMessage("Spieler nicht gefunden. Der Zielspieler muss online sein.");
+        command.execute(player, new String[] {"check", "modifyworld.*"}, config);
+        verify(player).sendMessage("Gib eine konkrete Modifyworld-Aktionsberechtigung ohne Platzhalter an.");
+        when(player.hasPermission("modifyworld.command.check")).thenReturn(false);
+        command.execute(player, new String[] {"check", "modifyworld.chat"}, config);
+        verify(player).sendMessage("Du hast keine Berechtigung für diesen Befehl.");
+    }
+
+    @Test
+    void customTextAndMissingEnglishFallbackKeepLayout() throws Exception {
+        config.options().pathSeparator('/');
+        config.createSection("messages");
+        config.set("messages/check.title", "Custom heading");
+        command.execute(player, new String[] {"check", "modifyworld.chat"}, config);
+        var plain = messages(player).stream().map(PlainTextComponentSerializer.plainText()::serialize).toList();
+        assertEquals(11, plain.size());
+        assertEquals("Custom heading", plain.getFirst());
+        assertEquals("Action: DENIED", plain.get(9));
+        assertTrue(plain.getLast().startsWith("Note: "));
+    }
+
 }

@@ -1,3 +1,6 @@
 /target/
 /.vscode/
 .DS_Store
+
+# Local publication drafts (not distributed).
+/release-drafts/

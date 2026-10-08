@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-10-07: verify preservation and backups when diagnostic keys are appended.
 // Modified on 2026-09-30: support and validate Brazilian Portuguese, Polish and Turkish.
 // Modified or added for the Paper port on 2026-09-28 and 2026-09-29; see NOTICE.
 package modifyworld.bukkit;
@@ -70,6 +71,7 @@ class PluginConfigurationTest {
             assertEquals("Custom ç ą ã $permission", config.getString("messages/modifyworld.chat"));
             assertEquals(fallback, config.getString("messages/modifyworld.items.take"));
             assertEquals(custom, Files.readString(selected));
+            assertFalse(Files.exists(selected.resolveSibling(language + ".yml.bak")));
             assertEquals(migrated, Files.readString(file));
         }
         assertEquals("language: " + language + "\n", Files.readString(directory.resolve("config.yml.bak")));
@@ -223,7 +225,9 @@ class PluginConfigurationTest {
         config = PluginConfiguration.load(file.toFile(), defaults());
         assertEquals("Custom bucket", config.getString("messages/modifyworld.bucket.fill"));
         assertNotNull(config.getString("messages/modifyworld.login"));
-        assertEquals("modifyworld.bucket.fill: Custom bucket\n", Files.readString(german));
+        assertEquals("modifyworld.bucket.fill: Custom bucket\n",
+                Files.readString(german));
+        assertFalse(Files.exists(directory.resolve("lang/own.yml.bak")));
         Files.writeString(file, "language: en\n");
         config = PluginConfiguration.load(file.toFile(), defaults());
         assertEquals("You may not collect &a$1&4 with a bucket.", config.getString("messages/modifyworld.bucket.fill"));

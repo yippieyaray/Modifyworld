@@ -7,7 +7,7 @@ Original project: https://github.com/PEXPlugins/Modifyworld
 Original source notices: Copyright (C) 2011 t3hk0d3 http://www.tehkode.ru
 Original authors and contributors retain their respective rights.
 Paper port: https://github.com/yippieyaray/Modifyworld
-Port modifications by Raymond (yippieyaray), 2026-09-28 through 2026-10-06.
+Port modifications by Raymond (yippieyaray), 2026-09-28 through 2026-10-08.
 
 Changes include the Java 25/Paper 26.2 build, neutral Java package namespace,
 Bukkit permission checks for LuckPerms, inventory/crafting/hazard handling,
@@ -53,3 +53,11 @@ sharing the action permission policy and covering console and player usage.
 On 2026-10-06, diagnostic command labels, colors, help and command permissions
 were refined, and the diagnostic command tests were updated.
 On 2026-10-06, the pinned Paper API was updated to 26.2.build.130-stable.
+
+On 2026-10-07, permission diagnostics were localized in all seven supported
+languages, with single-line validation, English fallback, and migration of
+missing diagnostic keys with exact language-file backups and regression tests.
+Migration handling now uses numeric release/beta comparison, ordered fixed-version
+steps, version-only updates without configuration backups, and contextual INFO logs.
+On 2026-10-08, release documentation and source-package contents were prepared
+for the BETA.6 handoff, including migration logging instructions in AGENTS.md.
