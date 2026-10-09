@@ -6,8 +6,11 @@ author: t3hk0d3
 website: https://github.com/yippieyaray/Modifyworld
 description: World modification permission ruleset
 api-version: '26.2'
+# Confirmed Paper server versions; extend only after server testing.
+tested-paper-versions: ['26.2']
 commands:
   modifyworld:
+    aliases: [mw]
     description: Explain a Modifyworld permission decision for an online player
     usage: /modifyworld check [player] <permission>
     permission: modifyworld.command.check

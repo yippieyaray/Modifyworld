@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-10-08: clarify nullness at test API boundaries.
 // Modified on 2026-10-05: preserve the unknown-action policy for OPs.
 // Modified or added for the Paper port on 2026-09-28 and 2026-09-29; see NOTICE.
 package modifyworld;
@@ -35,7 +36,11 @@ class ContainerListenerTest {
 
     @BeforeEach
     void setup() {
+        // Mockito returns a mock, but its generic factory lacks null annotations.
+        @SuppressWarnings("null")
         Plugin plugin = mock(Plugin.class);
+        // Mockito returns a mock, but its generic factory lacks null annotations.
+        @SuppressWarnings("null")
         Server server = mock(Server.class);
         when(plugin.getServer()).thenReturn(server);
         when(server.getPluginManager()).thenReturn(mock(PluginManager.class));
@@ -77,6 +82,8 @@ class ContainerListenerTest {
         config.set("messages/message-format", "%s");
         config.set("messages/modifyworld.items." + direction, "Item: $1; container: $3; permission: $permission");
         listener = new ContainerListener(mock(Plugin.class), config, new PlayerInformer(config));
+        // Mockito returns a mock, but its generic factory lacks null annotations.
+        @SuppressWarnings("null")
         ItemStack item = mock(ItemStack.class);
         when(item.getType()).thenReturn(material);
         String permission = "modifyworld.items." + direction + "."
@@ -159,6 +166,8 @@ class ContainerListenerTest {
 
     @Test
     void dragAcrossBoundaryChecksPutButBottomOnlyDragDoesNot() {
+        // Mockito returns a mock, but its generic factory lacks null annotations.
+        @SuppressWarnings("null")
         InventoryDragEvent event = mock(InventoryDragEvent.class);
         when(event.getWhoClicked()).thenReturn(player);
         when(event.getView()).thenReturn(view);
@@ -211,7 +220,11 @@ class ContainerListenerTest {
     @ParameterizedTest
     @EnumSource(value = InventoryAction.class, names = {"PICKUP_FROM_BUNDLE", "PLACE_FROM_BUNDLE"})
     void bundleExtractionChecksContainedMaterial(InventoryAction action) {
+        // Mockito returns a mock, but its generic factory lacks null annotations.
+        @SuppressWarnings("null")
         ItemStack bundle = mock(ItemStack.class);
+        // Mockito returns a mock, but its generic factory lacks null annotations.
+        @SuppressWarnings("null")
         org.bukkit.inventory.meta.BundleMeta meta = mock(org.bukkit.inventory.meta.BundleMeta.class);
         when(bundle.getType()).thenReturn(Material.BUNDLE);
         when(bundle.getItemMeta()).thenReturn(meta);
@@ -240,6 +253,8 @@ class ContainerListenerTest {
     void collectionIgnoresUnrelatedItemsInContainer() {
         InventoryClickEvent event = click(InventoryAction.COLLECT_TO_CURSOR, 30);
         when(event.getCursor()).thenReturn(tnt);
+        // Mockito returns a mock, but its generic factory lacks null annotations.
+        @SuppressWarnings("null")
         ItemStack stone = mock(ItemStack.class);
         when(stone.getType()).thenReturn(Material.STONE);
         when(top.getContents()).thenReturn(new ItemStack[] {stone});

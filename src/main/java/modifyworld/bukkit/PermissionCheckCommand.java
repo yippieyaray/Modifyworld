@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-10-08: handle missing detail text safely.
 // Modified on 2026-10-07: localize diagnostic texts while preserving layout and colors.
 // Modified on 2026-10-06: clarify diagnostic labels and place the explanatory note last.
 // Added on 2026-10-05: explain Modifyworld decisions for online players.
@@ -66,8 +67,8 @@ public final class PermissionCheckCommand {
     }
 
     private void detail(CommandSender sender, String label, String value) {
-        sender.sendMessage(Component.text(label, NamedTextColor.GRAY)
-                .append(Component.text(value, NamedTextColor.AQUA)));
+        sender.sendMessage(Component.text(label == null ? "" : label, NamedTextColor.GRAY)
+                .append(Component.text(value == null ? "" : value, NamedTextColor.AQUA)));
     }
 
     private void usage(CommandSender sender, CheckMessages texts) {

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-10-08: align beta validation and nullness handling.
 // Added on 2026-10-07: cover diagnostic key migration, backups and fallback.
 package modifyworld.bukkit;
 
@@ -29,7 +30,7 @@ class LanguageFilesTest {
         PluginConfiguration.load(file.toFile(), getClass().getResourceAsStream("/config.yml"), log::add);
         assertEquals(java.util.List.of("Migrating configuration settings", "Migrating language files",
                 "Migrating legacy messages to lang/own.yml",
-                "Configuration migration unversioned -> 2.0.0-BETA.6 completed."), log);
+                "Configuration migration unversioned -> 2.0.0-BETA.7 completed."), log);
         log.clear();
         PluginConfiguration.load(file.toFile(), getClass().getResourceAsStream("/config.yml"), log::add);
         assertTrue(log.isEmpty());
@@ -57,7 +58,7 @@ class LanguageFilesTest {
         String defaults;
         try (var stream = getClass().getResourceAsStream("/config.yml")) {
             defaults = new String(stream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8)
-                    .replace("2.0.0-BETA.6", "2.0.0-BETA.7");
+                    .replace("2.0.0-BETA.7", "2.0.0-BETA.8");
         }
         PluginConfiguration.load(file.toFile(), new java.io.ByteArrayInputStream(
                 defaults.getBytes(java.nio.charset.StandardCharsets.UTF_8)), log::add);
@@ -107,7 +108,7 @@ class LanguageFilesTest {
                 .getString("version"), release);
         Path configFile = directory.resolve("config.yml");
         String migratedConfig = Files.readString(configFile);
-        assertTrue(migratedConfig.contains("config-version: " + release));
+        assertEquals(release, YamlConfiguration.loadConfiguration(configFile.toFile()).getString("config-version"));
         String edited = "# Intentionally sparse\ncheck.title: Custom\n";
         Files.writeString(folder.resolve("own.yml"), edited);
         Files.writeString(folder.resolve("de.yml"), edited);
@@ -151,7 +152,7 @@ class LanguageFilesTest {
                 + "use-material-names: false\ncheck-metadata: true\n";
         Files.writeString(configFile, originalConfig);
         var config = PluginConfiguration.load(configFile.toFile(), getClass().getResourceAsStream("/config.yml"));
-        assertEquals("2.0.0-BETA.6", config.getString("config-version"));
+        assertEquals("2.0.0-BETA.7", config.getString("config-version"));
         assertTrue(config.getBoolean("require-login-permission"));
         assertEquals(originalConfig, Files.readString(directory.resolve("config.yml.bak")));
         String migratedConfig = Files.readString(configFile);
@@ -183,7 +184,8 @@ class LanguageFilesTest {
         var config = PluginConfiguration.load(configFile.toFile(), getClass().getResourceAsStream("/config.yml"));
         assertFalse(config.getBoolean("require-login-permission"));
         assertEquals("Custom", config.getString("messages/modifyworld.chat"));
-        assertEquals(original, Files.readString(configFile));
+        assertEquals(version.equals("2.0.0-BETA.6")
+                ? original.replace("2.0.0-BETA.6", "2.0.0-BETA.7") : original, Files.readString(configFile));
         assertFalse(Files.exists(directory.resolve("config.yml.bak")));
         for (String code : codes) {
             assertEquals(sparse, Files.readString(folder.resolve(code + ".yml")));
@@ -196,13 +198,13 @@ class LanguageFilesTest {
         String defaults;
         try (var stream = getClass().getResourceAsStream("/config.yml")) {
             defaults = new String(stream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8)
-                    .replace("2.0.0-BETA.6", "2.0.0-BETA.7");
+                    .replace("2.0.0-BETA.7", "2.0.0-BETA.8");
         }
         Path file = directory.resolve("config.yml");
         var config = PluginConfiguration.load(file.toFile(), new java.io.ByteArrayInputStream(
                 defaults.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
-        assertEquals("2.0.0-BETA.7", config.getString("config-version"));
-        assertEquals("2.0.0-BETA.7", YamlConfiguration.loadConfiguration(file.toFile()).getString("config-version"));
+        assertEquals("2.0.0-BETA.8", config.getString("config-version"));
+        assertEquals("2.0.0-BETA.8", YamlConfiguration.loadConfiguration(file.toFile()).getString("config-version"));
         assertFalse(Files.exists(directory.resolve("config.yml.bak")));
     }
 
@@ -216,7 +218,7 @@ class LanguageFilesTest {
         Path file = directory.resolve("config.yml");
         Files.writeString(file, original);
         PluginConfiguration.load(file.toFile(), getClass().getResourceAsStream("/config.yml"));
-        assertEquals("config-version: '2.0.0-BETA.6'\n" + original, Files.readString(file));
+        assertEquals("config-version: '2.0.0-BETA.7'\n" + original, Files.readString(file));
         assertFalse(Files.exists(directory.resolve("config.yml.bak")));
     }
 
@@ -230,13 +232,13 @@ class LanguageFilesTest {
         String defaults;
         try (var stream = getClass().getResourceAsStream("/config.yml")) {
             defaults = new String(stream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8)
-                    .replace("2.0.0-BETA.6", "2.0.0-BETA.7");
+                    .replace("2.0.0-BETA.7", "2.0.0-BETA.8");
         }
         PluginConfiguration.load(file.toFile(), new java.io.ByteArrayInputStream(
                 defaults.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
-        String updatedMarker = marker.replace("'2.0.0-BETA.6'", "'2.0.0-BETA.7'")
-                .replace("\"2.0.0-BETA.6\"", "'2.0.0-BETA.7'")
-                .replace(": 2.0.0-BETA.6", ": '2.0.0-BETA.7'");
+        String updatedMarker = marker.replace("'2.0.0-BETA.6'", "'2.0.0-BETA.8'")
+                .replace("\"2.0.0-BETA.6\"", "'2.0.0-BETA.8'")
+                .replace(": 2.0.0-BETA.6", ": '2.0.0-BETA.8'");
         assertEquals(original.replace(marker, updatedMarker), Files.readString(file));
         assertFalse(Files.exists(directory.resolve("config.yml.bak")));
     }
@@ -252,12 +254,12 @@ class LanguageFilesTest {
         String futureDefaults;
         try (var stream = getClass().getResourceAsStream("/config.yml")) {
             futureDefaults = new String(stream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8)
-                    .replace("2.0.0-BETA.6", "2.0.0-BETA.7");
+                    .replace("2.0.0-BETA.7", "2.0.0-BETA.8");
         }
         var config = PluginConfiguration.load(configFile.toFile(), new java.io.ByteArrayInputStream(
                 futureDefaults.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
-        assertEquals("2.0.0-BETA.7", config.getString("config-version"));
-        assertEquals(completed.replace("config-version: 2.0.0-BETA.6", "config-version: '2.0.0-BETA.7'"),
+        assertEquals("2.0.0-BETA.8", config.getString("config-version"));
+        assertEquals(completed.replace("config-version: '2.0.0-BETA.7'", "config-version: '2.0.0-BETA.8'"),
                 Files.readString(configFile));
         assertEquals(sparse, Files.readString(english));
         assertFalse(Files.exists(english.resolveSibling("en.yml.bak")));

@@ -4,3 +4,6 @@
 
 # Local publication drafts (not distributed).
 /release-drafts/
+
+# Assistant instructions remain in the private release-drafts directory.
+/AGENTS.md

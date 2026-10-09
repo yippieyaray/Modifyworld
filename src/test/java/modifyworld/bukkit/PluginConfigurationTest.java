@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-10-08: align beta validation and nullness handling.
 // Modified on 2026-10-07: verify preservation and backups when diagnostic keys are appended.
 // Modified on 2026-09-30: support and validate Brazilian Portuguese, Polish and Turkish.
 // Modified or added for the Paper port on 2026-09-28 and 2026-09-29; see NOTICE.
@@ -18,6 +19,49 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class PluginConfigurationTest {
     @TempDir Path directory;
+
+    @org.junit.jupiter.api.Test
+    void commandAliasDefaultsToEnabledForExistingConfiguration() throws Exception {
+        Path file = directory.resolve("config.yml");
+        Files.writeString(file, "config-version: '2.0.0-BETA.6'\nlanguage: en\nmessages: {}\n");
+        String original = Files.readString(file);
+        var config = PluginConfiguration.load(file.toFile(), defaults());
+        assertTrue(config.getBoolean("command-alias-mw"));
+        assertEquals(original.replace("2.0.0-BETA.6", "2.0.0-BETA.7"), Files.readString(file));
+    }
+
+    @org.junit.jupiter.api.Test
+    void commandAliasCanBeDisabledInExistingConfiguration() throws Exception {
+        Path file = directory.resolve("config.yml");
+        Files.writeString(file, "config-version: '2.0.0-BETA.6'\ncommand-alias-mw: false\nlanguage: en\nmessages: {}\n");
+        var config = PluginConfiguration.load(file.toFile(), defaults());
+        assertFalse(config.getBoolean("command-alias-mw"));
+    }
+
+    @org.junit.jupiter.api.Test
+    void commandAliasRejectsNonBooleanValues() throws Exception {
+        Path file = directory.resolve("config.yml");
+        Files.writeString(file, "config-version: '2.0.0-BETA.6'\ncommand-alias-mw: 'true'\nlanguage: en\nmessages: {}\n");
+        assertThrows(org.bukkit.configuration.InvalidConfigurationException.class,
+                () -> PluginConfiguration.load(file.toFile(), defaults()));
+    }
+
+    @org.junit.jupiter.api.Test
+    void updateCheckDefaultsToEnabledAndPreservesExplicitFalse() throws Exception {
+        Path file = directory.resolve("config.yml");
+        Files.writeString(file, "config-version: '2.0.0-BETA.7'\nlanguage: en\nmessages: {}\n");
+        assertTrue(PluginConfiguration.load(file.toFile(), defaults()).getBoolean("check-for-updates"));
+        Files.writeString(file, "config-version: '2.0.0-BETA.7'\ncheck-for-updates: false\nlanguage: en\nmessages: {}\n");
+        assertFalse(PluginConfiguration.load(file.toFile(), defaults()).getBoolean("check-for-updates"));
+    }
+
+    @org.junit.jupiter.api.Test
+    void updateCheckRejectsNonBooleanSetting() throws Exception {
+        Path file = directory.resolve("config.yml");
+        Files.writeString(file, "config-version: '2.0.0-BETA.7'\ncheck-for-updates: 'true'\nlanguage: en\nmessages: {}\n");
+        assertThrows(org.bukkit.configuration.InvalidConfigurationException.class,
+                () -> PluginConfiguration.load(file.toFile(), defaults()));
+    }
 
     private InputStream defaults() {
         return getClass().getResourceAsStream("/config.yml");
@@ -84,6 +128,8 @@ class PluginConfigurationTest {
         "pl, Nie możesz wyjmować §atnt§4 z tego pojemnika.",
         "tr, Bu kaptan §atnt§4 alamazsınız."
     })
+    // Mockito mocks and verification results are non-null but lack null annotations.
+    @SuppressWarnings("null")
     void newLanguageMessageReachesPlayer(String language, String expected) throws Exception {
         Path file = directory.resolve("config.yml");
         Files.writeString(file, "language: " + language + "\n");
@@ -188,6 +234,8 @@ class PluginConfigurationTest {
     }
 
     @Test
+    // Mockito mocks and verification results are non-null but lack null annotations.
+    @SuppressWarnings("null")
     void selectedLanguageReachesPlayerWithFormattingAndOverrides() throws Exception {
         Path file = directory.resolve("config.yml");
         Files.writeString(file, "language: de\nmessages: {}\n");

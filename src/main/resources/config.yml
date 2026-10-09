@@ -1,5 +1,9 @@
 # Managed configuration version; migrations use fixed release thresholds.
 config-version: '${project.version}'
+# Enable /mw as a shortcut for /modifyworld. Restart after changing.
+command-alias-mw: true
+# Check public GitHub releases once at startup; no automatic downloads.
+check-for-updates: true
 # Modern material names only; legacy numeric IDs and metadata require migration.
 # Enable item-on-block/entity permission checks, including flint and steel.
 item-use-check: true

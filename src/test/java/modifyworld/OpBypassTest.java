@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-10-08: clarify nullness at test API boundaries.
 // Modified on 2026-10-05: cover OP fallback, assigned permissions and placement events.
 // Modified or added for the Paper port on 2026-09-28 and 2026-09-29; see NOTICE.
 package modifyworld;
@@ -12,6 +13,8 @@ import static org.mockito.Mockito.*;
 
 class OpBypassTest {
     @Test
+    // Mockito mock and verification results lack null annotations.
+    @SuppressWarnings("null")
     void bypassRequiresBothConfigurationAndOperatorStatus() {
         for (boolean enabled : new boolean[] {false, true}) {
             for (boolean operator : new boolean[] {false, true}) {
@@ -38,6 +41,8 @@ class OpBypassTest {
     @org.junit.jupiter.params.provider.CsvSource({
         "false,false,true", "false,true,false", "true,false,true", "true,true,false"
     })
+    // Mockito mock and verification results lack null annotations.
+    @SuppressWarnings("null")
     void assignedPermissionHasSameResultWithAndWithoutOp(boolean operator, boolean grant, boolean denied) {
         var listener = new ModifyworldListener(mock(Plugin.class), new YamlConfiguration(), mock(PlayerInformer.class)) { };
         var player = mock(Player.class);
@@ -51,6 +56,8 @@ class OpBypassTest {
     }
 
     @Test
+    // Mockito mock and verification results lack null annotations.
+    @SuppressWarnings("null")
     void opFallbackCannotGrantUnassignedPermissions() {
         var informer = mock(PlayerInformer.class);
         var listener = new ModifyworldListener(mock(Plugin.class), new YamlConfiguration(), informer) { };
@@ -64,6 +71,8 @@ class OpBypassTest {
     }
 
     @Test
+    // Mockito mock and verification results lack null annotations.
+    @SuppressWarnings("null")
     void worldChangesAndPermissionRemovalAreNotCached() {
         var listener = new ModifyworldListener(mock(Plugin.class), new YamlConfiguration(), mock(PlayerInformer.class)) { };
         var player = mock(Player.class);
@@ -86,6 +95,8 @@ class OpBypassTest {
 
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    // Mockito mock and verification results lack null annotations.
+    @SuppressWarnings("null")
     void tntPlacementRejectsOpFallbackInBothHandsAndPreservesEarlierCancellation(boolean bypass) {
         var config = new YamlConfiguration();
         config.set("op-bypass", bypass);

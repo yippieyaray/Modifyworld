@@ -60,4 +60,4 @@ missing diagnostic keys with exact language-file backups and regression tests.
 Migration handling now uses numeric release/beta comparison, ordered fixed-version
 steps, version-only updates without configuration backups, and contextual INFO logs.
 On 2026-10-08, release documentation and source-package contents were prepared
-for the BETA.6 handoff, including migration logging instructions in AGENTS.md.
+for the BETA.6 handoff, including migration logging documentation.

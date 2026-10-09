@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-10-08: clarify nullness at test API boundaries.
 // Modified or added for the Paper port on 2026-09-28 and 2026-09-29; see NOTICE.
 package modifyworld;
 
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+// Local null-warning suppressions cover Mockito's unannotated mock/spy return types.
 class ApiCompatibilityTest {
     private Plugin plugin;
     private BukkitScheduler scheduler;
@@ -36,6 +38,7 @@ class ApiCompatibilityTest {
     @BeforeEach
     void setup() {
         plugin = mock(Plugin.class);
+        @SuppressWarnings("null")
         Server server = mock(Server.class);
         scheduler = mock(BukkitScheduler.class);
         when(plugin.getServer()).thenReturn(server);
@@ -56,6 +59,7 @@ class ApiCompatibilityTest {
     @Test
     void asynchronousChatDefersPermissionLookupAndMessagesToScheduler() throws Exception {
         PlayerListener listener = new PlayerListener(plugin, config, informer);
+        @SuppressWarnings("null")
         AsyncChatEvent event = mock(AsyncChatEvent.class, withSettings().mockMaker(org.mockito.MockMakers.INLINE));
         when(event.isAsynchronous()).thenReturn(true);
         when(event.getPlayer()).thenReturn(player);
@@ -90,6 +94,7 @@ class ApiCompatibilityTest {
     @Test
     void synchronousChatNeverWaitsOnSchedulerAndPreservesDenials() {
         when(player.hasPermission("modifyworld.chat")).thenReturn(true);
+        @SuppressWarnings("null")
         AsyncChatEvent event = mock(AsyncChatEvent.class, withSettings().mockMaker(org.mockito.MockMakers.INLINE));
         when(event.getPlayer()).thenReturn(player);
         new PlayerListener(plugin, config, informer).onPlayerChat(event);
@@ -99,6 +104,7 @@ class ApiCompatibilityTest {
 
     @Test
     void chatLookupFailureCancelsMessage() {
+        @SuppressWarnings("null")
         AsyncChatEvent event = mock(AsyncChatEvent.class, withSettings().mockMaker(org.mockito.MockMakers.INLINE));
         when(event.isAsynchronous()).thenReturn(true);
         CompletableFuture<Boolean> failure = CompletableFuture.failedFuture(new IllegalStateException("provider failed"));
@@ -109,14 +115,19 @@ class ApiCompatibilityTest {
 
     @Test
     void multiPlacementChecksEveryAffectedBlock() {
+        @SuppressWarnings("null")
         Block first = mock(Block.class);
+        @SuppressWarnings("null")
         Block second = mock(Block.class);
         when(first.getType()).thenReturn(Material.STONE);
         when(second.getType()).thenReturn(Material.TNT);
+        @SuppressWarnings("null")
         BlockState a = mock(BlockState.class);
+        @SuppressWarnings("null")
         BlockState b = mock(BlockState.class);
         when(a.getBlock()).thenReturn(first);
         when(b.getBlock()).thenReturn(second);
+        @SuppressWarnings("null")
         BlockMultiPlaceEvent event = mock(BlockMultiPlaceEvent.class);
         when(event.getPlayer()).thenReturn(player);
         when(event.getReplacedBlockStates()).thenReturn(List.of(a, b));
@@ -130,6 +141,7 @@ class ApiCompatibilityTest {
     void vehicleCollisionUsesSupportedCancellation() {
         VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent(mock(Vehicle.class), player);
         // No vehicle name is needed when checking the already assembled permission result.
+        @SuppressWarnings("null")
         VehicleListener listener = spy(new VehicleListener(plugin, config, informer));
         doReturn(true).when(listener)._permissionDenied(eq(player), eq("modifyworld.vehicle.collide"), any());
         listener.onVehicleEntityCollision(event);
@@ -140,6 +152,7 @@ class ApiCompatibilityTest {
     @SuppressWarnings("deprecation")
     void optionalLoginDenialPreservesEarlierBan() {
         LoginListener listener = new LoginListener(plugin, config, informer);
+        @SuppressWarnings("null")
         PlayerLoginEvent event = mock(PlayerLoginEvent.class, withSettings().mockMaker(org.mockito.MockMakers.INLINE));
         when(event.getResult()).thenReturn(PlayerLoginEvent.Result.KICK_BANNED);
         listener.onLogin(event);

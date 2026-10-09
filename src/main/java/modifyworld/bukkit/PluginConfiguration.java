@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-10-08: validate the command alias setting and preserve non-null migration entries.
 // Modified on 2026-10-07: validate diagnostic lines and gate migrations by a fixed release threshold.
 // Modified on 2026-09-30: support and validate Brazilian Portuguese, Polish and Turkish.
 // Modified or added for the Paper port on 2026-09-28 and 2026-09-29; see NOTICE.
@@ -12,6 +13,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Locale;
+import org.jspecify.annotations.NonNull;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -36,7 +38,7 @@ final class PluginConfiguration {
      * contain only its own changes, never call or include earlier migrations.
      * A failure stops the chain; the last successfully saved target remains on disk.
      */
-    private static final java.util.List<MigrationStep> MIGRATIONS = java.util.List.of(
+    private static final java.util.List<@NonNull MigrationStep> MIGRATIONS = java.util.List.of(
             new MigrationStep(ReleaseVersion.parse("2.0.0-BETA.6"), PluginConfiguration::migrateToBeta6));
 
     private PluginConfiguration() { }
@@ -274,6 +276,12 @@ final class PluginConfiguration {
     }
 
     static void validate(YamlConfiguration config) throws InvalidConfigurationException {
+        if (config.contains("check-for-updates", true) && !config.isBoolean("check-for-updates")) {
+            throw new InvalidConfigurationException("check-for-updates must be a boolean");
+        }
+        if (config.contains("command-alias-mw", true) && !config.isBoolean("command-alias-mw")) {
+            throw new InvalidConfigurationException("command-alias-mw must be a boolean");
+        }
         for (String key : new String[] {"item-use-check",
                 "op-bypass", "inform-players", "item-restrictions", "drop-restricted-item", "require-login-permission"}) {
             if (!config.isBoolean(key)) throw new InvalidConfigurationException(key + " must be a boolean");

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-10-08: clarify nullness at test API boundaries.
 // Modified or added for the Paper port on 2026-09-28 and 2026-09-29; see NOTICE.
 package modifyworld;
 
@@ -29,6 +30,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+// Local null-warning suppressions cover Mockito's unannotated mock return types.
 class CraftingAndHazardsTest {
     private PlayerListener players;
     private BlockListener blocks;
@@ -43,12 +45,15 @@ class CraftingAndHazardsTest {
 
     @BeforeEach
     void setup() {
+        @SuppressWarnings("null")
         Plugin plugin = mock(Plugin.class);
+        @SuppressWarnings("null")
         Server server = mock(Server.class);
         when(plugin.getServer()).thenReturn(server);
         when(server.getPluginManager()).thenReturn(mock(PluginManager.class));
         YamlConfiguration config = new YamlConfiguration();
         config.set("item-use-check", true);
+        @SuppressWarnings("null")
         PlayerInformer informer = mock(PlayerInformer.class);
         players = new PlayerListener(plugin, config, informer);
         blocks = new BlockListener(plugin, config, informer);
@@ -60,15 +65,18 @@ class CraftingAndHazardsTest {
     }
 
     private ItemStack item(Material material) {
+        @SuppressWarnings("null")
         ItemStack item = mock(ItemStack.class);
         when(item.getType()).thenReturn(material);
         return item;
     }
 
     private CraftItemEvent craft(Material result, ClickType click, InventoryAction action, InventoryType type) {
+        @SuppressWarnings("null")
         CraftingInventory inventory = mock(CraftingInventory.class);
         when(inventory.getType()).thenReturn(type);
         when(inventory.getSize()).thenReturn(type == InventoryType.WORKBENCH ? 10 : 5);
+        @SuppressWarnings("null")
         InventoryView view = mock(InventoryView.class);
         when(view.getPlayer()).thenReturn(player);
         when(view.getTopInventory()).thenReturn(inventory);
@@ -76,6 +84,7 @@ class CraftingAndHazardsTest {
         ItemStack output = result == null ? null : item(result);
         when(view.getItem(0)).thenReturn(output);
         // A modified output must be checked instead of this recipe's nominal result.
+        @SuppressWarnings("null")
         Recipe recipe = mock(Recipe.class);
         ItemStack nominal = item(Material.STONE);
         when(recipe.getResult()).thenReturn(nominal);
@@ -200,6 +209,7 @@ class CraftingAndHazardsTest {
         "BUCKET_EMPTY,WATER_CAULDRON,water,empty", "BUCKET_FILL,POWDER_SNOW_CAULDRON,powdersnow,fill"})
     void cauldronUsesSameBucketPermissions(CauldronLevelChangeEvent.ChangeReason reason,
             Material content, String name, String action) {
+        @SuppressWarnings("null")
         BlockState newState = mock(BlockState.class);
         when(newState.getType()).thenReturn(reason == CauldronLevelChangeEvent.ChangeReason.BUCKET_EMPTY
                 ? content : Material.CAULDRON);
@@ -207,6 +217,7 @@ class CraftingAndHazardsTest {
                 ? content : Material.CAULDRON);
         CauldronLevelChangeEvent event = new CauldronLevelChangeEvent(block, player, reason, newState);
         when(player.hasPermission("modifyworld.bucket." + action + "." + name)).thenReturn(false);
+        @SuppressWarnings("null")
         PlayerInformer messages = mock(PlayerInformer.class);
         blocks = new BlockListener(mock(Plugin.class), new YamlConfiguration(), messages);
         blocks.onCauldronBucket(event);
@@ -216,6 +227,7 @@ class CraftingAndHazardsTest {
 
     @Test
     void cauldronAllowsGrantedLavaAndPreservesCancellation() {
+        @SuppressWarnings("null")
         BlockState state = mock(BlockState.class);
         when(state.getType()).thenReturn(Material.LAVA_CAULDRON);
         CauldronLevelChangeEvent event = new CauldronLevelChangeEvent(block, player,
@@ -239,8 +251,10 @@ class CraftingAndHazardsTest {
     @ParameterizedTest
     @EnumSource(value = EquipmentSlot.class, names = {"HAND", "OFF_HAND"})
     void creeperIgnitionChecksItemInEventHand(EquipmentSlot hand) {
+        @SuppressWarnings("null")
         org.bukkit.entity.Creeper creeper = mock(org.bukkit.entity.Creeper.class);
         when(creeper.getType()).thenReturn(org.bukkit.entity.EntityType.CREEPER);
+        @SuppressWarnings("null")
         PlayerInventory inventory = mock(PlayerInventory.class);
         when(player.getInventory()).thenReturn(inventory);
         ItemStack flint = item(Material.FLINT_AND_STEEL);
@@ -256,6 +270,7 @@ class CraftingAndHazardsTest {
     @ParameterizedTest
     @CsvSource({"TNT,tnt", "FLINT_AND_STEEL,flintandsteel", "LAVA_BUCKET,lavabucket"})
     void dangerousItemPickupHonorsDenyAndAllow(Material material, String name) {
+        @SuppressWarnings("null")
         org.bukkit.entity.Item dropped = mock(org.bukkit.entity.Item.class);
         ItemStack stack = item(material);
         when(dropped.getItemStack()).thenReturn(stack);

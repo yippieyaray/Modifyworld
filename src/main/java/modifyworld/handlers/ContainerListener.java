@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-10-08: remove unused import and obsolete inventory action.
 // Modified on 2026-10-05: share unknown-action policy with permission diagnostics.
 // Modified or added for the Paper port on 2026-09-28 and 2026-09-29; see NOTICE.
 // Added on 2026-09-28. Licensed under GPL-2.0-or-later.
@@ -13,7 +14,6 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BundleMeta;
@@ -83,7 +83,7 @@ public class ContainerListener extends ModifyworldListener {
                 blocked = inTop && denied(player, top, "put", cursor);
             case SWAP_WITH_CURSOR -> blocked = inTop &&
                     (denied(player, top, "take", current) || denied(player, top, "put", cursor));
-            case HOTBAR_SWAP, HOTBAR_MOVE_AND_READD -> {
+            case HOTBAR_SWAP -> {
                 if (inTop) {
                     ItemStack incoming;
                     if (event.getClick() == ClickType.SWAP_OFFHAND) {

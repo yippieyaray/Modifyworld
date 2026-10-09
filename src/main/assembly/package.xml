@@ -14,6 +14,7 @@
                 <include>NOTICE</include>
                 <include>README*</include>
                 <include>RELEASE-NOTES.md</include>
+                <include>DEVELOPMENT.md</include>
                 <include>examples/**</include>
             </includes>
         </fileSet>
@@ -23,9 +24,9 @@
             <includes>
                 <include>pom.xml</include>
                 <include>build.sh</include>
-                <include>AGENTS.md</include>
                 <include>README.md</include>
                 <include>RELEASE-NOTES.md</include>
+                <include>DEVELOPMENT.md</include>
                 <include>examples/**</include>
                 <include>LICENSE</include>
                 <include>NOTICE</include>

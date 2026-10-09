@@ -10,7 +10,14 @@ to **Paper 26.2, Java 25, and LuckPerms**. WorldGuard remains responsible for
 regions. Modifyworld adds permission checks and does not clear another plugin's
 event cancellation.
 
-> **Beta — 2.0.0-BETA.6**
+> **Beta — 2.0.0-BETA.7**
+
+### Changes in this beta
+
+- Add `/mw` as a shortcut for `/modifyworld`.
+- Add `command-alias-mw: true` to `config.yml`; set it to `false` and restart to disable the shortcut.
+- Resolve null-safety, deprecated API and unused-import warnings in production code and tests.
+- Add an optional GitHub update check at startup, enabled by default.
 
 ## Requirements and compatibility
 
@@ -20,41 +27,33 @@ event cancellation.
 | Server | Developed and tested against Paper for Minecraft 26.2 |
 | Newer Paper versions | May work but have not yet been verified |
 | Java | Java 25 |
-| Compile-time Paper API | `26.2.build.130-stable`, pinned in [pom.xml](pom.xml) |
 | Permissions | LuckPerms is the intended provider; Modifyworld uses Bukkit permission checks |
 | Regions | Optional WorldGuard installation with its required dependencies |
 | PermissionsEx / Vault | Neither is required or used |
 | Other platforms | Spigot, Folia are not supported targets of this port |
 
-The API version is a build target, not proof of live compatibility. Exact tested
-Paper/LuckPerms/WorldGuard versions will be recorded after integration testing.
-See [Paper's project setup documentation](https://docs.papermc.io/paper/dev/project-setup/)
-for the Paper dependency and Java version conventions.
+Confirmed server tests do not establish compatibility with newer Paper versions.
 
 ## Installation
 
-1. Prepare an isolated Paper 26.2 server running Java 25 and back up any worlds,
-   permissions, and configuration you intend to reuse.
-2. Install the Bukkit/Paper edition of LuckPerms. If you need regions, install
-   WorldGuard and its dependencies separately.
-3. Build this branch using the instructions below. Stop the server and place
-   `target/Modifyworld.jar` in its `plugins/` directory. Remove any older
-   Modifyworld JAR from that directory to avoid loading two copies.
-4. Start the test server. Confirm that the console reports `Modifyworld enabled!`.
-   The first successful configuration load creates `plugins/Modifyworld/config.yml`.
-5. Stop the server, review the configuration, and set up LuckPerms permissions.
-   Existing numeric permissions must be migrated before relying on this port.
-6. Restart and test with a **non-OP** account in every relevant world. Use
-   LuckPerms verbose output to confirm which permissions are being checked.
+1. Prepare a Paper 26.2 server running Java 25. Back up existing worlds,
+   permissions and configuration before upgrading.
+2. Install LuckPerms. If you use regions, also install WorldGuard and its dependencies.
+3. Download the JAR from [Hangar](https://hangar.papermc.io/Yippie/Modifyworld-Reloaded).
+   Stop the server and place it in `plugins/`, replacing any older Modifyworld JAR.
+   For building from source, see [Build and validation](#build-and-validation).
+4. Start the server and confirm `Modifyworld enabled!` in the console.
+   Configuration is created in `plugins/Modifyworld/config.yml`.
+5. Review the configuration, configure LuckPerms and restart. Convert legacy
+   numeric permissions if you are moving from the original Modifyworld.
+6. Test with a **non-OP** account in each relevant world. Use LuckPerms verbose
+   output or [permission diagnostics](#permission-diagnostics) to check permissions.
 
-Modifyworld provides a permission diagnostic command, but no live configuration reload.
-Restart after changing its configuration. LuckPerms permission changes are
-evaluated on subsequent checks without a Modifyworld-specific permission cache.
+Restart after configuration changes; there is no live reload. LuckPerms permission
+changes apply on subsequent checks without restarting Modifyworld.
 
-An invalid configuration or listener startup failure disables Modifyworld and
-logs that protection is **not active**. This does not shut down the Minecraft
-server. Existing configurations below a migration's fixed version threshold are
-migrated with a backup; invalid configurations are not rewritten.
+Invalid configuration or startup failures disable Modifyworld, but leave the server
+running. Check the log: protection is **not active** while the plugin is disabled.
 
 ## How permissions work
 
@@ -69,14 +68,13 @@ name/context reported by your server, not a display alias. See
 [LuckPerms contexts](https://luckperms.net/wiki/Context) and
 [permission precedence](https://luckperms.net/wiki/Advanced-Setup).
 
-With `op-bypass: false`, operators need an effective permission assignment for
-normal actions. Modifyworld checks Bukkit `isPermissionSet` before accepting an
-OP's `hasPermission` result. LuckPerms resolves assignments from users, groups,
-wildcards and contexts, but excludes its implicit OP fallback from `isPermissionSet`.
-With `op-bypass: true`, OPs bypass these checks, including explicit denials.
-Neither setting clears WorldGuard cancellations or Minecraft admission checks.
-The unknown-inventory-action exception below still defaults to allowed.
-Other permission providers must implement Bukkit's assignment checks correctly.
+- `op-bypass: false`: OPs need assigned permissions, directly or through groups,
+  wildcards or contexts. An implicit OP grant alone is insufficient.
+- `op-bypass: true`: OPs bypass Modifyworld checks, including explicit denials.
+
+Neither setting bypasses WorldGuard restrictions or Minecraft admission checks.
+Unknown inventory actions use the special default described below.
+Other permission providers must support Bukkit assignment checks correctly.
 
 ### Naming conventions
 
@@ -218,54 +216,26 @@ TNT; item-use permissions address direct ignition tools.
 
 ## Permission diagnostics
 
-### Syntax
+Use concrete action permissions without wildcards. The target must be online;
+checks use their current world and permission context.
 
-In-game, check your own permissions:
+| Where | Example |
+| --- | --- |
+| In-game, yourself | `/modifyworld check modifyworld.blocks.place.tnt` |
+| In-game, another player | `/modifyworld check Alex modifyworld.blocks.place.tnt` |
+| Server console | `modifyworld check Alex modifyworld.blocks.place.tnt` |
 
-```text
-/modifyworld check modifyworld.<permission>
-```
+`/mw` is the default shortcut for `/modifyworld`.
 
-From the server console, specify an online player:
-
-```text
-modifyworld check <PlayerName> modifyworld.<permission>
-```
-
-The named-player form also works in-game with a leading `/`. Replace
-`<PlayerName>` with the player's name and `<permission>` with an action suffix
-such as `blocks.place.tnt`, without the angle brackets. Use concrete action
-permissions, without wildcards. The target must be online; the check uses their
-current world and permission context.
-
-### Command access
-
-Both forms require `modifyworld.command.check` (granted to OPs by default);
-the server console can always use them. This command permission is independent
-of `op-bypass` and permits checks for yourself and other online players.
-A matching `modifyworld.command.*` or `modifyworld.*` grant also includes it.
-
-To grant command access globally to the Player group, run in the server console:
+Both player forms require `modifyworld.command.check`, granted to OPs by default
+and independent of `op-bypass`. The console always has access.
+To grant access to the Player group, run:
 
 ```text
 lp group player permission set modifyworld.command.check true
 ```
 
 See the [world permission example](examples/luckperms-worlds.md#player).
-
-### Examples
-
-In-game, check whether Modifyworld permissions allow you to place TNT:
-
-```text
-/modifyworld check modifyworld.blocks.place.tnt
-```
-
-From the console, check the same permission for an online player named Alex:
-
-```text
-modifyworld check Alex modifyworld.blocks.place.tnt
-```
 
 ### Understanding the result
 
@@ -285,23 +255,18 @@ Action: ALLOWED
 Note: This checks Modifyworld permissions only. Other rules or plugins may still block the action.
 ```
 
+The fields most useful for interpreting the result are:
+
 | Field | Meaning |
 | --- | --- |
-| `Player` / `Player is OP` | The checked player and their operator status. |
-| `World` | The checked player's current world. |
-| `Permission` | The exact action permission being checked. |
-| `Modifyworld OP bypass` | The plugin's `op-bypass` setting. It bypasses Modifyworld permission checks only when enabled and the checked player is OP. |
-| `Bukkit permission result` | The raw Bukkit permission result, which may include an implicit OP grant. |
-| `Permission explicitly assigned or inherited` | Whether Bukkit reports an effective assignment, for example directly, through a group or through a wildcard. `yes` may represent either a grant or a denial; it does not mean allowed. |
-| `Reason` | Why Modifyworld allows or denies this permission check. |
-| `Action` | Modifyworld's permission decision: `ALLOWED` or `DENIED`. |
-| `Note` | A reminder that permission checks alone cannot determine whether the entire action will succeed. Configuration switches, event rules and other plugins still apply. |
+| `Modifyworld OP bypass` | Whether the bypass is enabled; it applies only to OPs. |
+| `Bukkit permission result` | The raw permission result, which may include an implicit OP grant. |
+| `Permission explicitly assigned or inherited` | Whether an assignment exists. `yes` can mean a grant or a denial. |
+| `Action` | Modifyworld's decision: bold green `ALLOWED` or bold red `DENIED`. |
 
-The action result is bold green for `ALLOWED` or bold red for `DENIED`.
-
-The command uses the same policy as the listeners, including the default-allow
-unknown-inventory-action exception. LuckPerms' own check command still shows
-its native result, which may include an OP fallback rejected by Modifyworld.
+The command uses the same permission policy as the listeners. LuckPerms' own
+check may differ because of implicit OP grants. Other plugins and event rules
+can still block an action reported as allowed.
 
 ## Configuration
 
@@ -313,6 +278,8 @@ The full default file is [config.yml](src/main/resources/config.yml).
 | `inform-players` | `true` | Send configured denial messages; deliberately silent checks such as pickup remain silent |
 | `item-restrictions` | `false` | Scan inventory on monitored interactions, pickup/drop, and held-slot changes; remove items denied by `items.have` |
 | `drop-restricted-item` | `false` | During those inventory scans, drop removed items in the world instead of deleting them |
+| `check-for-updates` | `true` | Check public GitHub releases once at startup; beta installations include betas, stable installations only stable releases. No automatic download. |
+| `command-alias-mw` | `true` | Enable `/mw` as an alias for `/modifyworld`; restart after changing. Other plugins may claim `/mw`. |
 | `op-bypass` | `false` | When true, operators bypass Modifyworld checks including explicit denials; when false, OP fallback alone grants no access |
 | `language` | `en` | Server message language: `en`, `de`, `es`, `fr`, `pt_br`, `pl`, `tr`, or `own` |
 | `require-login-permission` | `false` | Require `modifyworld.login` in addition to Minecraft's admission checks |
@@ -320,23 +287,46 @@ The full default file is [config.yml](src/main/resources/config.yml).
 `item-restrictions` is an event-driven scan, not continuous monitoring. A denial
 of `items.hold` can move the item out of the hotbar or drop it when storage is full.
 
-The old `whitelist` setting remains a deprecated alias for
-`require-login-permission`. An explicitly configured new key takes precedence;
-otherwise the old value is used. Neither setting changes Minecraft's whitelist.
-If Minecraft's whitelist is your only admission policy, leave
-`require-login-permission: false`. The optional extra check currently uses an
-isolated legacy login-event adapter so that Bukkit permissions can be checked
-before entry. Its live LuckPerms behavior still needs verification.
+Boolean settings must use `true` or `false`, without quotes.
 
-Boolean settings must use YAML booleans (`true`/`false`, without quotes).
-Missing options are added to existing files at startup, preserving configured values.
-Before rewriting, the original is copied to `config.yml.bak` (then `.bak.1`, etc.).
-YAML formatting may change; the backup preserves the exact original file.
-The legacy `whitelist` key is removed after resolving `require-login-permission`.
-The obsolete `use-material-names` and `check-metadata` options are removed during
-migration, regardless of their values. Modern material names are always used;
-legacy numeric IDs and data values are unsupported. This does not convert
-permissions stored in LuckPerms; those must be migrated separately.
+### Update notifications
+
+- Check GitHub releases once after successful startup, without blocking the server.
+- Beta installations consider newer betas and stable releases; stable installations
+  consider only stable releases.
+- Skip releases whose declared minimum server version is newer than the running
+  server, including an optional minimum Paper build for that Minecraft version.
+  Releases without this information remain eligible.
+- Link to Hangar for downloads; never download or install automatically.
+- Set `check-for-updates: false` and restart to disable the check. A missing key defaults to `true`.
+
+Network failures produce a short notice and do not disable protection.
+A notification does not guarantee server compatibility. Requests use the public
+GitHub API without credentials or player/server identifiers. GitHub receives
+the connection IP address and plugin version in the user agent.
+
+### Command shortcut
+
+`/mw` is enabled even if `command-alias-mw` is missing from an existing file.
+Add `command-alias-mw: false` and restart to disable it. `/modifyworld` remains
+available; another plugin's `/mw` command is preserved when disabling the alias.
+
+### Login permission
+
+Leave `require-login-permission: false` if Minecraft's whitelist is your only
+admission policy. Enabling it additionally requires `modifyworld.login`; its
+live LuckPerms behavior still needs verification.
+The old `whitelist` key is migrated to this setting unless the new key is already set.
+Neither changes Minecraft's whitelist.
+
+### Configuration upgrades
+
+Missing settings use their defaults; they are not necessarily written into an
+existing file. Configurations needing migration are updated automatically.
+Obsolete `use-material-names` and `check-metadata` options are removed.
+Modern material names are always used; LuckPerms permissions must be converted separately.
+See [configuration and language upgrades](#configuration-and-language-upgrades)
+for backups and custom messages.
 
 ### Messages
 
@@ -350,36 +340,18 @@ Edit that file directly, keep `messages: {}` in `config.yml`, and restart after
 changes. Missing entries fall back to the bundled selected language, then English;
 `own` uses English as its fallback. Modifyworld does not translate system-provided material or entity names.
 
-On upgrade, missing `check.*` entries are added without replacing existing texts.
-All configuration and language migrations share `config-version` in `config.yml`.
-Versions are parsed as `<major>.<minor>.<patch>[-BETA.<beta>]` and compared numerically;
-a final release sorts after every beta of the same version. The existing legacy
-and diagnostic migrations have a fixed threshold of `2.0.0-BETA.6`. A missing or
-older configuration version runs these migrations for all language files, including
-`own.yml`, and records the completed migration's target version after success. Equal or newer versions
-skip them, even when the plugin release changes; missing texts still use the
-in-memory fallback. Future migrations require their own fixed version thresholds
-and run in ascending order on the previous step's result, without repeating earlier
-steps. Each completed step is saved before the next starts. After a successful
-load, `config-version` advances to the running release, even if no migration was
-needed. Version-only updates create no backup and preserve other settings.
-Backups are created when migration changes configuration content. Downgrades keep
-a higher recorded version. Fresh configurations record the running release version.
-Leave the managed version unchanged.
-Migrations log their configuration/language work at INFO level and finish with
-`Configuration migration <from> -> <to> completed.` after successful validation
-and saving. Fresh installs and version-only updates do not emit migration messages.
-Each migration declares its affected standard languages: existing files receive
-missing diagnostic entries, while absent files are installed completely from the
-bundled resource. Diagnostic migration never creates `own.yml`; only migration of
-legacy custom `messages` may create it.
-Before changing a language file, its original is saved as `<language>.yml.bak`
-(then `.bak.1`, etc.). Legacy `messages` from `config.yml` migrate automatically
-to `lang/own.yml`, with the original configuration saved as `config.yml.bak`.
-A conflicting existing `own.yml` is preserved and must be merged manually.
-Invalid configuration or language data stops plugin startup; check the server log.
+### Configuration and language upgrades
 
-Formatting rules:
+- Existing settings and custom translations are preserved. Missing diagnostic
+  texts are added when their migration applies; otherwise bundled fallback texts are used.
+- Changed configuration and language files are backed up as `.bak`, then `.bak.1`, etc.
+  A version-only configuration update creates no backup.
+- Legacy `messages` move to `lang/own.yml`. If existing texts conflict, startup
+  stops so you can merge them manually; the existing file is preserved.
+- `config-version` is managed automatically; do not edit it.
+- Invalid configuration or language files stop plugin startup. Check the server log.
+
+### Message formatting
 
 - Save files as UTF-8; umlauts and other accented characters are supported.
 - Use quoted YAML strings. Every `check.*` value must contain a single line;
@@ -435,62 +407,34 @@ specification of what the server actually enforced.
   can affect event behavior. Test the actual server combination.
 - Startup failure leaves Modifyworld disabled, not a server-wide lockdown.
 
-## Operational safety and backups
+## Testing and backups
 
-Modifyworld adds permission checks for supported player actions. It does not
-guarantee protection against every form of world modification, plugin conflict,
-configuration mistake or software defect.
+Test new versions with your permissions, worlds and plugin combination on a
+separate server before production use. Keep backups of worlds, configuration
+and permissions, and check that they can be restored.
 
-Before using a new version on a production server, test your permissions,
-world contexts and plugin combination on a separate test server. Keep regular
-backups of worlds, configurations and permissions, and verify that they can
-be restored.
-
-A stable release does not mean that the software is free of defects.
-Automated tests cover selected behavior and do not replace testing your
-specific server setup.
-
-The software is provided under GPL-2.0-or-later. Warranty disclaimers and
-limitations of liability are set out in LICENSE, subject to applicable law.
-
+Automated tests cover selected behavior; test your actual server setup as well.
 Release details and validation results are in [RELEASE-NOTES.md](RELEASE-NOTES.md).
 
 ## Build and validation
 
-Use JDK 25 and Maven (development testing used Maven 3.9.11):
+Use JDK 25 and Maven 3.9.11:
 
 ```sh
-java -version
-mvn -version
 mvn clean verify
 ```
 
-For persistent user-local tools, `./build.sh` runs the same clean build and prints
-Java/Maven versions first. Its defaults are JDK 25.0.4.1+1 (macOS bundle) and
-Maven 3.9.11 under `~/.local/share/minecraft-devtools/`. Set
-`MODIFYWORLD_JAVA_HOME` and `MODIFYWORLD_MAVEN_HOME` to use other installation
-paths, including non-macOS JDK layouts. `MODIFYWORLD_TOOLS_DIR` overrides the
-common tools directory, shared with other Minecraft plugin projects. Setup and
-troubleshooting details are included in `build.sh`. The script does not download tools or change shell settings;
-missing tools produce an error. Maven normally caches dependencies in
-`~/.m2/repository/`, outside temporary storage.
+Alternatively, `./build.sh` selects configured user-local tools and runs the same
+build. See its setup comments or [DEVELOPMENT.md](DEVELOPMENT.md) for tool paths,
+offline builds and IDE test configuration.
 
-With dependencies already cached, run `./build.sh -B -o clean verify` offline.
-Explicit arguments replace the default `-B clean verify` arguments. The script
-sets Java only for its own process and Maven children. A sandbox still needs write
-permission to the Maven cache when dependencies must be downloaded.
+The build runs automated tests and produces:
 
-Expected artifacts are `target/Modifyworld.jar` and `target/Modifyworld-2.0.0-BETA.6.zip`.
-The first build downloads the Paper API and build/test dependencies. The API is
-provided by the server and is not bundled into the plugin.
+- `target/Modifyworld.jar`
+- `target/Modifyworld-2.0.0-BETA.7.zip`
 
-Build validation uses automated tests with mocked server services and selected
-real event classes. Run `mvn verify` to execute them and package the beta.
-Surefire loads Mockito as a Java agent when the test JVM starts; dynamic agent
-loading is disabled. The agent uses the configured local Maven repository and
-the same Mockito version as the test dependency. No runtime attachment is needed.
-Run tests through Maven to apply this configuration; IDE-native test runners need
-the equivalent JVM agent option. Mockito remains test-only and is not in the plugin JAR.
+The first build downloads dependencies. Paper's API is supplied by the server;
+Paper and test libraries are not bundled into the plugin.
 
 ## Links
 
@@ -508,7 +452,5 @@ license text, attribution, modification summary and source provenance.
 Original copyright notices are retained. The software comes without warranty.
 
 `Modifyworld.jar` includes LICENSE and NOTICE under `META-INF/`.
-`Modifyworld-2.0.0-BETA.6.zip` includes the JAR, documentation, license and the complete
+`Modifyworld-2.0.0-BETA.7.zip` includes the JAR, documentation, license and the complete
 corresponding project source under `source/`, including tests and Maven build files.
-Publish this ZIP alongside the standalone JAR and use a release tag matching the
-source used for the build. Private server configurations are not included.

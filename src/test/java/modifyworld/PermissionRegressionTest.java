@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-10-08: clarify nullness at test API boundaries.
 // Modified or added for the Paper port on 2026-09-28 and 2026-09-29; see NOTICE.
 // Modified on 2026-09-28: move to the neutral modifyworld namespace.
 package modifyworld;
@@ -37,12 +38,18 @@ class PermissionRegressionTest {
 
     @BeforeEach
     void setup() {
+        // Mockito returns a mock, but its generic factory lacks null annotations.
+        @SuppressWarnings("null")
         Plugin plugin = mock(Plugin.class);
+        // Mockito returns a mock, but its generic factory lacks null annotations.
+        @SuppressWarnings("null")
         Server server = mock(Server.class);
         when(plugin.getServer()).thenReturn(server);
         when(server.getPluginManager()).thenReturn(mock(PluginManager.class));
         YamlConfiguration config = new YamlConfiguration();
         config.set("item-use-check", true);
+        // Mockito returns a mock, but its generic factory lacks null annotations.
+        @SuppressWarnings("null")
         PlayerInformer informer = mock(PlayerInformer.class);
         players = new PlayerListener(plugin, config, informer);
         blocks = new BlockListener(plugin, config, informer);
@@ -52,6 +59,8 @@ class PermissionRegressionTest {
     }
 
     private ItemStack item(Material material) {
+        // Mockito returns a mock, but its generic factory lacks null annotations.
+        @SuppressWarnings("null")
         ItemStack item = mock(ItemStack.class);
         when(item.getType()).thenReturn(material);
         return item;
@@ -161,6 +170,8 @@ class PermissionRegressionTest {
 
     @Test
     void playerPickupChecksModernMaterialName() {
+        // Mockito returns a mock, but its generic factory lacks null annotations.
+        @SuppressWarnings("null")
         org.bukkit.entity.Item dropped = mock(org.bukkit.entity.Item.class);
         ItemStack tnt = item(Material.TNT);
         when(dropped.getItemStack()).thenReturn(tnt);

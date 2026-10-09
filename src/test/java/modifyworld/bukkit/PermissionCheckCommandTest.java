@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-10-08: clarify nullness at test API boundaries.
 // Modified on 2026-10-07: cover translated layout, decision reasons and command errors.
 // Modified on 2026-10-06: verify diagnostic colors, final result order and online target setup.
 // Added on 2026-10-05: cover self/console diagnostics and permission policy.
@@ -10,6 +11,8 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.command.CommandSender;
 import org.mockito.ArgumentCaptor;
+import org.jspecify.annotations.NonNull;
+import java.util.Objects;
 import static org.junit.jupiter.api.Assertions.*;
 import org.bukkit.Server;
 import org.bukkit.World;
@@ -28,18 +31,31 @@ class PermissionCheckCommandTest {
     private Player player;
     private YamlConfiguration config;
 
-    private java.util.List<Component> messages(CommandSender sender) {
-        var captor = ArgumentCaptor.forClass(Component.class);
-        verify(sender, atLeastOnce()).sendMessage(captor.capture());
-        return captor.getAllValues();
+    private java.util.List<@NonNull Component> messages(CommandSender sender) {
+        var captor = captureMessages(sender);
+        java.util.List<@NonNull Component> captured = new java.util.ArrayList<>();
+        for (Component component : captor.getAllValues()) {
+            captured.add(Objects.requireNonNull(component));
+        }
+        return captured;
     }
 
-    private Component actionMessage(CommandSender sender) {
+    // Mockito lacks null contracts, and capture() returns a matcher placeholder.
+    @SuppressWarnings("all")
+    private ArgumentCaptor<@NonNull Component> captureMessages(CommandSender sender) {
+        ArgumentCaptor<@NonNull Component> captor = ArgumentCaptor.forClass(Component.class);
+        verify(sender, atLeastOnce()).sendMessage(captor.capture());
+        return captor;
+    }
+
+    private @NonNull Component actionMessage(CommandSender sender) {
         var output = messages(sender);
-        return output.get(output.size() - 2);
+        return Objects.requireNonNull(output.get(output.size() - 2));
     }
 
     @BeforeEach
+    // Mockito mocks and verification results are non-null but lack null annotations.
+    @SuppressWarnings("null")
     void setup() {
         player = mock(Player.class);
         when(player.getName()).thenReturn("TestPlayer");
@@ -59,6 +75,8 @@ class PermissionCheckCommandTest {
         "true,true,true,false,ALLOWED",
         "false,true,true,false,DENIED"
     })
+    // JDK collections do not declare the nullness contracts of captured test values.
+    @SuppressWarnings("null")
     void selfCheckReportsActualPolicy(boolean op, boolean bypass, boolean assigned, boolean granted, String result) {
         String node = "modifyworld.blocks.place.tnt";
         config.set("op-bypass", bypass);
@@ -67,7 +85,7 @@ class PermissionCheckCommandTest {
         when(player.hasPermission(node)).thenReturn(granted);
         command.execute(player, new String[] {"check", node}, config);
         var messages = messages(player);
-        var plain = messages.stream().map(PlainTextComponentSerializer.plainText()::serialize).toList();
+        var plain = messages.stream().map(component -> PlainTextComponentSerializer.plainText().serialize(Objects.requireNonNull(component))).toList();
         assertTrue(plain.contains("Bukkit permission result: " + granted));
         assertTrue(plain.contains("Permission explicitly assigned or inherited: " + (assigned ? "yes" : "no")));
         assertTrue(plain.getLast().startsWith("Note: This checks Modifyworld permissions only."));
@@ -93,6 +111,8 @@ class PermissionCheckCommandTest {
     }
 
     @Test
+    // Mockito mocks and verification results are non-null but lack null annotations.
+    @SuppressWarnings("null")
     void consoleUsesNamedOnlineTarget() {
         var console = mock(ConsoleCommandSender.class);
         var server = mock(Server.class);
@@ -104,6 +124,8 @@ class PermissionCheckCommandTest {
     }
 
     @Test
+    // Mockito mocks and verification results are non-null but lack null annotations.
+    @SuppressWarnings("null")
     void playerCanCheckAnotherOnlinePlayer() {
         var server = mock(Server.class);
         var target = mock(Player.class);
@@ -119,6 +141,8 @@ class PermissionCheckCommandTest {
     }
 
     @Test
+    // Mockito mocks and verification results are non-null but lack null annotations.
+    @SuppressWarnings("null")
     void consoleNeedsTargetAndRejectsOfflineTarget() {
         var console = mock(ConsoleCommandSender.class);
         var server = mock(Server.class);
@@ -151,6 +175,8 @@ class PermissionCheckCommandTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"en", "de", "es", "fr", "pt_br", "pl", "tr"})
+    // JDK collections do not declare the nullness contracts of captured test values.
+    @SuppressWarnings("null")
     void translatedDiagnosticsKeepElevenLinesOrderColorsAndRawValues(String language) throws Exception {
         useLanguage(language);
         String node = "modifyworld.blocks.place.tnt";
@@ -158,7 +184,7 @@ class PermissionCheckCommandTest {
         when(player.hasPermission(node)).thenReturn(true);
         command.execute(player, new String[] {"check", node}, config);
         var output = messages(player);
-        var plain = output.stream().map(PlainTextComponentSerializer.plainText()::serialize).toList();
+        var plain = output.stream().map(component -> PlainTextComponentSerializer.plainText().serialize(Objects.requireNonNull(component))).toList();
         var yaml = LanguageFiles.bundled(language);
         assertEquals(java.util.List.of(
                 yaml.getString("check.title"),
@@ -200,13 +226,15 @@ class PermissionCheckCommandTest {
         when(player.isPermissionSet(node)).thenReturn(assigned);
         when(player.hasPermission(node)).thenReturn(granted);
         command.execute(player, new String[] {"check", node}, config);
-        var plain = messages(player).stream().map(PlainTextComponentSerializer.plainText()::serialize).toList();
+        var plain = messages(player).stream().map(component -> PlainTextComponentSerializer.plainText().serialize(Objects.requireNonNull(component))).toList();
         var yaml = LanguageFiles.bundled("de");
         assertEquals(yaml.getString("check.label.reason") + yaml.getString("check.reason." + reason), plain.get(8));
         assertEquals(yaml.getString("check.label.action") + yaml.getString("check.value." + result), plain.get(9));
     }
 
     @Test
+    // Mockito mocks and verification results are non-null but lack null annotations.
+    @SuppressWarnings("null")
     void localizedConsoleDiagnosticsAndErrorsUseServerLanguage() throws Exception {
         useLanguage("de");
         var console = mock(ConsoleCommandSender.class);
@@ -228,12 +256,14 @@ class PermissionCheckCommandTest {
     }
 
     @Test
+    // JDK collections do not declare the nullness contracts of captured test values.
+    @SuppressWarnings("null")
     void customTextAndMissingEnglishFallbackKeepLayout() throws Exception {
         config.options().pathSeparator('/');
         config.createSection("messages");
         config.set("messages/check.title", "Custom heading");
         command.execute(player, new String[] {"check", "modifyworld.chat"}, config);
-        var plain = messages(player).stream().map(PlainTextComponentSerializer.plainText()::serialize).toList();
+        var plain = messages(player).stream().map(component -> PlainTextComponentSerializer.plainText().serialize(Objects.requireNonNull(component))).toList();
         assertEquals(11, plain.size());
         assertEquals("Custom heading", plain.getFirst());
         assertEquals("Action: DENIED", plain.get(9));

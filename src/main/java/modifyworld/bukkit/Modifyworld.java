@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// Modified on 2026-10-08: add configurable command alias and startup output; clarify nullness.
 // Modified on 2026-10-07: log migration context and successful completion.
 // Modified on 2026-10-05: expose the permission diagnostic command.
 // Modified on 2026-09-30: clarify comments and current Paper plugin description.
@@ -28,8 +29,15 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import org.bukkit.configuration.file.YamlConfiguration;
 import java.util.List;
+import java.util.Objects;
+import org.jspecify.annotations.NonNull;
 import java.util.logging.Level;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.HandlerList;
@@ -42,16 +50,26 @@ public class Modifyworld extends JavaPlugin {
     protected List<ModifyworldListener> listeners = List.of();
     protected PlayerInformer informer;
     protected FileConfiguration config;
+    private UpdateChecker updateChecker;
+    private org.bukkit.scheduler.BukkitTask updateTask;
 
     @Override
-    public boolean onCommand(org.bukkit.command.CommandSender sender, org.bukkit.command.Command command,
-            String label, String[] args) {
+    public boolean onCommand(@NonNull CommandSender sender, @NonNull Command command,
+            @NonNull String label, String @NonNull [] args) {
         return new PermissionCheckCommand().execute(sender, args, getConfig());
     }
 
     @Override
     public void onEnable() {
         try {
+            var console = getServer().getConsoleSender();
+            console.sendMessage(Component.empty());
+            console.sendMessage(Component.text("  |\\/| \\  /\\  /  ", NamedTextColor.YELLOW)
+                    .append(Component.text("Modifyworld", NamedTextColor.GREEN))
+                    .append(Component.text(" v" + getPluginMeta().getVersion(), NamedTextColor.YELLOW)));
+            console.sendMessage(Component.text("  |  |  \\/  \\/   ", NamedTextColor.YELLOW)
+                    .append(Component.text(testedPaperText(), NamedTextColor.GRAY)));
+            console.sendMessage(Component.empty());
             config = getConfig();
             informer = new PlayerInformer(config);
             // Construct every listener before registering any of them.
@@ -59,6 +77,7 @@ public class Modifyworld extends JavaPlugin {
             for (ModifyworldListener listener : listeners) {
                 getServer().getPluginManager().registerEvents(listener, this);
             }
+            configureCommandAlias();
             getServer().getConsoleSender().sendMessage(
                     Component.text("[Modifyworld] Modifyworld enabled!", NamedTextColor.GREEN));
         } catch (RuntimeException | LinkageError failure) {
@@ -67,7 +86,55 @@ public class Modifyworld extends JavaPlugin {
                     "Modifyworld startup failed. Protection is NOT active. Fix the error and restart the server.",
                     failure);
             getServer().getPluginManager().disablePlugin(this);
+            return;
         }
+        startUpdateCheck();
+    }
+
+    protected UpdateChecker createUpdateChecker() {
+        java.util.OptionalInt build;
+        try {
+            build = io.papermc.paper.ServerBuildInfo.buildInfo().buildNumber();
+        } catch (java.util.NoSuchElementException | IllegalStateException unavailable) {
+            build = java.util.OptionalInt.empty();
+        }
+        return new UpdateChecker(getPluginMeta().getVersion(), getServer().getMinecraftVersion(),
+                build, getLogger()::info);
+    }
+
+    private void startUpdateCheck() {
+        if (!config.getBoolean("check-for-updates", true)) return;
+        try {
+            updateChecker = createUpdateChecker();
+            updateTask = getServer().getScheduler().runTaskAsynchronously(this, updateChecker);
+        } catch (RuntimeException failure) {
+            if (updateChecker != null) updateChecker.close();
+            getLogger().info("Update check could not be scheduled; Modifyworld remains enabled.");
+        }
+    }
+
+    private @NonNull String testedPaperText() {
+        try (var resource = getResource("plugin.yml")) {
+            if (resource == null) return "Paper test versions not recorded";
+            var metadata = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(resource, StandardCharsets.UTF_8));
+            var versions = metadata.getStringList("tested-paper-versions");
+            return versions.isEmpty() ? "Paper test versions not recorded"
+                    : "Tested on Paper " + String.join(", ", versions);
+        } catch (IOException failure) {
+            getLogger().warning("Could not read tested Paper versions: " + failure.getMessage());
+            return "Paper test versions not recorded";
+        }
+    }
+
+    private void configureCommandAlias() {
+        if (config.getBoolean("command-alias-mw", true)) return;
+        var command = Objects.requireNonNull(getCommand("modifyworld"));
+        var commands = getServer().getCommandMap().getKnownCommands();
+        // Remove only our alias mappings; preserve commands owned by other plugins.
+        commands.remove("mw", command);
+        commands.remove("modifyworld:mw", command);
+        command.setAliases(List.of());
     }
 
     protected List<ModifyworldListener> createListeners() {
@@ -91,15 +158,17 @@ public class Modifyworld extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (updateChecker != null) updateChecker.close();
+        if (updateTask != null) updateTask.cancel();
         clearListeners();
         config = null;
         getLogger().info("Modifyworld disabled.");
     }
 
     @Override
-    public FileConfiguration getConfig() {
+    public @NonNull FileConfiguration getConfig() {
         if (config == null) reloadConfig();
-        return config;
+        return Objects.requireNonNull(config);
     }
 
     @Override
